@@ -1,0 +1,102 @@
+.vectorContainer {
+    display: flex;
+    flex-direction: column;
+    margin: 1rem 4rem;
+}
+
+.questionInputContainer {
+    border-radius: 0.375rem;
+    box-shadow:
+        0 8px 16px rgba(0, 0, 0, 0.14),
+        0 0 2px rgba(0, 0, 0, 0.12);
+    width: 100%;
+    padding: 15px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.questionInputTextArea {
+    flex: 1;
+}
+
+.spinner {
+    margin-top: 1rem;
+}
+
+.searchResultsContainer {
+    display: flex;
+    flex-direction: column;
+    margin-top: 1rem;
+    gap: 1rem;
+}
+
+.semanticAnswerCard {
+    border-radius: 0.375rem;
+    box-shadow:
+        0 8px 16px rgba(0, 0, 0, 0.14),
+        0 0 2px rgba(0, 0, 0, 0.12);
+    width: 100%;
+    padding: 15px;
+    background: white;
+    display: flex;
+    margin-bottom: 1rem;
+}
+
+.searchResultCard {
+    border-radius: 0.375rem;
+    box-shadow:
+        0 8px 16px rgba(0, 0, 0, 0.14),
+        0 0 2px rgba(0, 0, 0, 0.12);
+    width: 100%;
+    padding: 10px;
+    background: white;
+    display: flex;
+}
+
+.textContainer {
+    flex: 1;
+}
+
+.scoreContainer {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 10px;
+}
+
+.searchResultCardTitle {
+    font-size: 18px;
+    margin-bottom: 0;
+}
+
+.category {
+    display: inline-block;
+    background-color: #0078d4;
+    color: white;
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+.score {
+    font-size: 14px;
+    color: #0078d4;
+    font-weight: bold;
+}
+
+.vectorSettingsSeparator {
+    margin-top: 15px;
+}
+
+.sampleCardsContainer {
+    list-style: none;
+    padding-left: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    flex: 1;
+    justify-content: center;
+}
