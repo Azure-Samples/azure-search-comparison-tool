@@ -46,6 +46,9 @@ param visionAiSkuName string = 'S1'
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
 
+@description('Flag to decide where to create roles for current user')
+param createRoleForUser bool = true
+
 var abbrs = loadJsonContent('./abbreviations.json')
 
 // tags that should be applied to all resources.
@@ -173,7 +176,7 @@ module searchService 'core/search/search-services.bicep' = {
 }
 
 // USER ROLES
-module openAiRoleUser 'core/security/role.bicep' = {
+module openAiRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
   scope: openAiResourceGroup
   name: 'openai-role-user'
   params: {
@@ -183,7 +186,7 @@ module openAiRoleUser 'core/security/role.bicep' = {
   }
 }
 
-module visionAiRoleUser 'core/security/role.bicep' = {
+module visionAiRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
   scope: visionAiResourceGroup
   name: 'visionai-role-user'
   params: {
@@ -193,7 +196,7 @@ module visionAiRoleUser 'core/security/role.bicep' = {
   }
 }
 
-module searchRoleUser 'core/security/role.bicep' = {
+module searchRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
   scope: searchServiceResourceGroup
   name: 'search-role-user'
   params: {
@@ -203,7 +206,7 @@ module searchRoleUser 'core/security/role.bicep' = {
   }
 }
 
-module searchContribRoleUser 'core/security/role.bicep' = {
+module searchContribRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
   scope: searchServiceResourceGroup
   name: 'search-contrib-role-user'
   params: {
@@ -213,7 +216,7 @@ module searchContribRoleUser 'core/security/role.bicep' = {
   }
 }
 
-module searchSvcContribRoleUser 'core/security/role.bicep' = {
+module searchSvcContribRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
   scope: searchServiceResourceGroup
   name: 'search-svccontrib-role-user'
   params: {

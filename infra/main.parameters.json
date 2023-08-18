@@ -43,6 +43,9 @@
     },
     "searchImageIndexName": {
       "value": "${AZURE_SEARCH_IMAGE_INDEX=vectorimageindex}"
+    },
+    "createRoleForUser": {
+      "value": "${CREATE_ROLE_FOR_USER=true}"
     }
   }
 }
