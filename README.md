@@ -2,7 +2,7 @@
 
 This repository contains a React application that showcases a Vector Search Demo using Azure Cognitive Search. The demo leverages OpenAI for text embeddings and Azure AI Vision API for image embeddings.
 
-You can find a live demo at [aks.ms/VectorSearchDemo](https://gentle-desert-086f73910.3.azurestaticapps.net/#/)
+You can find a live demo at [aks.ms/VectorSearchDemo](https://app-backend-eypgput7faetw.azurewebsites.net/)
 
 ![Vector Search Video](public/VectorSearchDemo.gif?raw=true)
 

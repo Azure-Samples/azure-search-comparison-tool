@@ -2,7 +2,6 @@ import os
 import time
 import logging
 import openai
-import requests
 from flask import Flask, request, jsonify
 from azure.identity import DefaultAzureCredential
 from azure.search.documents import SearchClient

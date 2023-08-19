@@ -21,6 +21,11 @@ param searchServiceSkuName string // Set in main.parameters.json
 param searchTextIndexName string // Set in main.parameters.json
 param searchImageIndexName string // Set in main.parameters.json
 
+param storageAccountName string = ''
+param storageResourceGroupName string = ''
+param storageResourceGroupLocation string = location
+param storageContainerName string // Set in main.parameters.json
+
 param openAiServiceName string = ''
 param openAiResourceGroupName string = ''
 param openAiSkuName string // Set in main.parameters.json
@@ -74,6 +79,10 @@ resource visionAiResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' e
 
 resource searchServiceResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(searchServiceResourceGroupName)) {
   name: !empty(searchServiceResourceGroupName) ? searchServiceResourceGroupName : resourceGroup.name
+}
+
+resource storageResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(storageResourceGroupName)) {
+  name: !empty(storageResourceGroupName) ? storageResourceGroupName : resourceGroup.name
 }
 
 // Create an App Service Plan to group applications under the same payment plan and SKU
@@ -175,6 +184,31 @@ module searchService 'core/search/search-services.bicep' = {
   }
 }
 
+module storage 'core/storage/storage-account.bicep' = {
+  name: 'storage'
+  scope: storageResourceGroup
+  params: {
+    name: !empty(storageAccountName) ? storageAccountName : '${abbrs.storageStorageAccounts}${resourceToken}'
+    location: storageResourceGroupLocation
+    tags: tags
+    publicNetworkAccess: 'Enabled'
+    allowBlobPublicAccess: true
+    sku: {
+      name: 'Standard_ZRS'
+    }
+    deleteRetentionPolicy: {
+      enabled: true
+      days: 2
+    }
+    containers: [
+      {
+        name: storageContainerName
+        publicAccess: 'Blob'
+      }
+    ]
+  }
+}
+
 // USER ROLES
 module openAiRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
   scope: openAiResourceGroup
@@ -192,6 +226,26 @@ module visionAiRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
   params: {
     principalId: principalId
     roleDefinitionId: '93586559-c37d-4a6b-ba08-b9f0940c2d73'
+    principalType: 'User'
+  }
+}
+
+module storageRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
+  scope: storageResourceGroup
+  name: 'storage-role-user'
+  params: {
+    principalId: principalId
+    roleDefinitionId: '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1'
+    principalType: 'User'
+  }
+}
+
+module storageContribRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
+  scope: storageResourceGroup
+  name: 'storage-contribrole-user'
+  params: {
+    principalId: principalId
+    roleDefinitionId: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
     principalType: 'User'
   }
 }
@@ -237,6 +291,16 @@ module openAiRoleBackend 'core/security/role.bicep' = {
   }
 }
 
+module storageRoleBackend 'core/security/role.bicep' = {
+  scope: storageResourceGroup
+  name: 'storage-role-backend'
+  params: {
+    principalId: backend.outputs.identityPrincipalId
+    roleDefinitionId: '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1'
+    principalType: 'ServicePrincipal'
+  }
+}
+
 module searchRoleBackend 'core/security/role.bicep' = {
   scope: searchServiceResourceGroup
   name: 'search-role-backend'
@@ -260,3 +324,7 @@ output AZURE_VISIONAI_KEY string = visionAi.outputs.key
 output AZURE_SEARCH_SERVICE_ENDPOINT string = searchService.outputs.endpoint
 output AZURE_SEARCH_TEXT_INDEX_NAME string = searchTextIndexName
 output AZURE_SEARCH_IMAGE_INDEX_NAME string = searchImageIndexName 
+
+output AZURE_STORAGE_ACCOUNT string = storage.outputs.name
+output AZURE_STORAGE_CONTAINER string = storageContainerName
+output AZURE_STORAGE_RESOURCE_GROUP string = storageResourceGroup.name
