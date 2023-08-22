@@ -67,12 +67,35 @@ def search_text():
     if not request.json:
         return jsonify({"error": "request must be json"}), 400
     try:
+        vector_search = (
+            request.json["vectorSearch"] if request.json.get("vectorSearch") else False
+        )
+        hybrid_search = (
+            request.json["hybridSearch"] if request.json.get("hybridSearch") else False
+        )
+        select = request.json["select"] if request.json.get("select") else None
+        k = request.json["k"] if request.json.get("k") else 10
+        filter = request.json["filter"] if request.json.get("filter") else None
+        use_semantic_ranker = (
+            request.json["useSemanticRanker"]
+            if request.json.get("useSemanticRanker")
+            else False
+        )
+        use_semantic_captions = (
+            request.json["useSemanticCaptions"]
+            if request.json.get("useSemanticCaptions")
+            else False
+        )
+
         r = SearchText(search_client_text, AZURE_OPENAI_DEPLOYMENT_NAME).search(
             query=request.json["query"],
-            approach=request.json["approach"] or "vec",
-            use_semantic_ranker=request.json["useSemanticRanker"] or False,
-            use_semantic_captions=request.json["useSemanticCaptions"] or False,
-            overrides=request.json["overrides"] or {},
+            use_vector_search=vector_search,
+            use_hybrid_search=hybrid_search,
+            use_semantic_ranker=use_semantic_ranker,
+            use_semantic_captions=use_semantic_captions,
+            select=select,
+            k=k,
+            filter=filter,
         )
 
         return jsonify(r), 200

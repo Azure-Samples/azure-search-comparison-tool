@@ -1,55 +1,93 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { Checkbox, ChoiceGroup, DefaultButton, IChoiceGroupOption, Panel, Spinner, Stack, TextField } from "@fluentui/react";
+import { Checkbox, DefaultButton, MessageBar, MessageBarType, Panel, Spinner, Stack, TextField, Toggle } from "@fluentui/react";
 import { DismissCircle24Filled, Search24Regular, Settings20Regular } from "@fluentui/react-icons";
+import { AxiosError } from "axios";
 
 import styles from "./Vector.module.css";
 
-import { TextSearchResult, SemanticAnswer, Approach } from "../../api/types";
+import { TextSearchResult, Approach, AxiosErrorResponseData, ResultCard, ApproachKey } from "../../api/types";
 import { getTextSearchResults } from "../../api/textSearch";
 import SampleCard from "../../components/SampleCards";
+
+const MaxSelectedModes = 4;
 
 const Vector: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [textQueryVector, setTextQueryVector] = useState<number[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
-    const [searchResults, setSearchResults] = useState<TextSearchResult[]>([]);
-    const [semanticAnswer, setSemanticAnswer] = useState<SemanticAnswer | null>(null);
+    const [resultCards, setResultCards] = useState<ResultCard[]>([]);
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState<boolean>(false);
-    const [approach, setApproach] = useState<Approach>(Approach.Vector);
+    const [selectedApproachKeys, setSelectedApproachKeys] = useState<ApproachKey[]>(["text"]);
     const [filterText, setFilterText] = useState<string>("");
-    const [useSemanticRanker, setUseSemanticRanker] = useState<boolean>(false);
     const [useSemanticCaptions, setUseSemanticCaptions] = useState<boolean>(false);
+    const [hideScores, setHideScores] = React.useState<boolean>(true);
+    const [errors, setErrors] = React.useState<string[]>([]);
 
-    const approaches: IChoiceGroupOption[] = useMemo(
+    const approaches: Approach[] = useMemo(
         () => [
-            { key: Approach.Vector, text: "Vectors Only" },
-            { key: Approach.VectorFilter, text: "Vectors with Filter" },
-            { key: Approach.Hybrid, text: "Vectors + Text (Hybrid Search)" }
+            { key: "text", title: "Text Only (BM25)" },
+            { key: "vec", title: "Vectors Only (ANN)" },
+            { key: "hs", title: "Vectors + Text (Hybrid Search)" },
+            { key: "hssr", title: "Hybrid + Semantic Reranking" },
+            { key: "vecf", title: "Vectors with Filter" }
         ],
         []
     );
 
     useEffect(() => {
         if (searchQuery === "") {
-            setSearchResults([]);
+            setResultCards([]);
         }
     }, [searchQuery]);
 
     const executeSearch = useCallback(
         async (query: string) => {
             if (query.length === 0) {
-                setSearchResults([]);
+                setResultCards([]);
                 return;
             }
 
             setLoading(true);
-            const results = await getTextSearchResults(approach, query, useSemanticRanker, useSemanticCaptions, filterText);
-            setTextQueryVector(results.queryVector);
-            setSearchResults(results.results);
-            setSemanticAnswer(results.semanticAnswers?.[0] ? results.semanticAnswers[0] : null);
+
+            let searchApproachKeys = selectedApproachKeys;
+            if (selectedApproachKeys.length === 0) {
+                searchApproachKeys = ["text"];
+            }
+            setSelectedApproachKeys(searchApproachKeys);
+
+            let resultsList: ResultCard[] = [];
+            let searchErrors: string[] = [];
+            let queryVector: number[] = [];
+            for (const approachKey of searchApproachKeys) {
+                try {
+                    const results = await getTextSearchResults(approachKey, query, useSemanticCaptions, filterText);
+                    const searchResults = results.results;
+                    const semanticAnswer = results.semanticAnswers?.[0] ? results.semanticAnswers[0] : null;
+                    resultsList = resultsList.concat({
+                        approachKey,
+                        searchResults,
+                        semanticAnswer
+                    });
+
+                    if (results.queryVector) {
+                        queryVector = results.queryVector;
+                    }
+                } catch (e) {
+                    const errorMsg = `Failed to fetch results for [${approaches.find(a => a.key === approachKey)?.title}] retrieval mode`;
+                    const error = e as AxiosError;
+                    const data = error.response?.data as AxiosErrorResponseData;
+                    data
+                        ? (searchErrors = [`${errorMsg}. Details: ${data.error.message}`, ...searchErrors])
+                        : (searchErrors = [`${errorMsg}. Details: ${error.message}`, ...searchErrors]);
+                }
+            }
+
+            setErrors(searchErrors);
+            setResultCards(resultsList);
+            setTextQueryVector(queryVector);
             setLoading(false);
         },
-        [approach, filterText, useSemanticCaptions, useSemanticRanker]
+        [selectedApproachKeys, filterText, useSemanticCaptions, approaches]
     );
 
     const handleOnKeyDown = useCallback(
@@ -71,13 +109,16 @@ const Vector: React.FC = () => {
         setSearchQuery(newValue ?? "");
     }, []);
 
-    const onApproachChange = useCallback((_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, option?: IChoiceGroupOption) => {
-        setApproach((option?.key as Approach) ?? Approach.Vector);
-    }, []);
-
-    const onUseSemanticRankerChange = useCallback((_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, checked?: boolean) => {
-        setUseSemanticRanker(!!checked);
-    }, []);
+    const onApproachChange = useCallback(
+        (_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, checked?: boolean, approach?: Approach) => {
+            if (approach?.key) {
+                checked
+                    ? !selectedApproachKeys.includes(approach.key) && setSelectedApproachKeys([...selectedApproachKeys, approach.key])
+                    : setSelectedApproachKeys(selectedApproachKeys.filter(a => a !== approach.key));
+            }
+        },
+        [selectedApproachKeys]
+    );
 
     const onUseSemanticCaptionsChange = useCallback((_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, checked?: boolean) => {
         setUseSemanticCaptions(!!checked);
@@ -101,7 +142,14 @@ const Vector: React.FC = () => {
             </Stack>
             <div className={styles.spinner}>{loading && <Spinner label="Getting results" />}</div>
             <div className={styles.searchResultsContainer}>
-                {searchResults.length === 0 && !loading ? (
+                {errors &&
+                    !!errors.length &&
+                    errors.map(e => (
+                        <MessageBar key={e} messageBarType={MessageBarType.error}>
+                            {e}
+                        </MessageBar>
+                    ))}
+                {resultCards.length === 0 && !loading ? (
                     <div className={styles.sampleCardsContainer}>
                         <SampleCard query="tools for software development" onClick={handleSampleCardClick} />
                         <SampleCard query="herramientas para el desarrollo de software" onClick={handleSampleCardClick} />
@@ -109,41 +157,73 @@ const Vector: React.FC = () => {
                     </div>
                 ) : (
                     <>
-                        {semanticAnswer && (
-                            <Stack horizontal className={styles.semanticAnswerCard}>
-                                <div className={styles.textContainer}>
-                                    <p
-                                        dangerouslySetInnerHTML={{
-                                            __html: semanticAnswer.highlights
-                                        }}
-                                    ></p>
+                        <Stack horizontal tokens={{ childrenGap: "12px" }}>
+                            {resultCards.map(resultCard => (
+                                <div key={resultCard.approachKey}>
+                                    <p className={styles.approach}>{approaches.find(a => a.key === resultCard.approachKey)?.title} </p>
+                                    {!resultCard.semanticAnswer && !resultCard.searchResults.length && (
+                                        <p className={styles.searchResultCardTitle}>{"No Results Found"} </p>
+                                    )}
+                                    {/* {resultCard.semanticAnswer && (
+                                        <Stack horizontal className={styles.semanticAnswerCard}>
+                                            <div className={styles.textContainer}>
+                                                <p
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: resultCard.semanticAnswer.highlights
+                                                    }}
+                                                ></p>
+                                            </div>
+                                        </Stack>
+                                    )} */}
+                                    {resultCard.searchResults.map((result: TextSearchResult) => (
+                                        <Stack horizontal className={styles.searchResultCard} key={result.id}>
+                                            <div className={styles.textContainer}>
+                                                <Stack horizontal horizontalAlign="space-between">
+                                                    <div>
+                                                        <p className={styles.searchResultCardTitle}>{result.title} </p>
+                                                        <p className={styles.category}>{result.category}</p>
+                                                    </div>
+                                                    {!hideScores && (
+                                                        <div className={styles.scoreContainer}>
+                                                            <p className={styles.score}>
+                                                                {`Score: ${
+                                                                    resultCard.approachKey === "hssr"
+                                                                        ? result["@search.reranker_score"]?.toFixed(3)
+                                                                        : result["@search.score"]?.toFixed(3)
+                                                                }`}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </Stack>
+                                                <p
+                                                    style={{ fontSize: "12px" }}
+                                                    dangerouslySetInnerHTML={{
+                                                        __html:
+                                                            (
+                                                                (result["@search.captions"]?.[0].highlights
+                                                                    ? result["@search.captions"][0].highlights.slice(0, 350)
+                                                                    : result["@search.captions"]?.[0].text
+                                                                    ? result["@search.captions"][0].text.slice(0, 350)
+                                                                    : result.content.slice(0, 300)) || ""
+                                                            ).length >= 300
+                                                                ? ((result["@search.captions"]?.[0].highlights
+                                                                      ? result["@search.captions"][0].highlights.slice(0, 350)
+                                                                      : result["@search.captions"]?.[0].text
+                                                                      ? result["@search.captions"][0].text.slice(0, 350)
+                                                                      : result.content.slice(0, 300)) || "") + "..."
+                                                                : (result["@search.captions"]?.[0].highlights
+                                                                      ? result["@search.captions"][0].highlights.slice(0, 350)
+                                                                      : result["@search.captions"]?.[0].text
+                                                                      ? result["@search.captions"][0].text.slice(0, 350)
+                                                                      : result.content.slice(0, 300)) || ""
+                                                    }}
+                                                />
+                                            </div>
+                                        </Stack>
+                                    ))}
                                 </div>
-                            </Stack>
-                        )}
-                        {searchResults.map((result: TextSearchResult) => (
-                            <Stack horizontal className={styles.searchResultCard} key={result.id}>
-                                <div className={styles.textContainer}>
-                                    <p className={styles.searchResultCardTitle}>{result.title} </p>
-                                    <p className={styles.category}>{result.category}</p>
-                                    <p
-                                        dangerouslySetInnerHTML={{
-                                            __html: result["@search.captions"]?.[0].highlights
-                                                ? result["@search.captions"][0].highlights
-                                                : result["@search.captions"]?.[0].text
-                                                ? result["@search.captions"][0].text
-                                                : result.content
-                                        }}
-                                    ></p>
-                                </div>
-                                <div className={styles.scoreContainer}>
-                                    <p className={styles.score}>
-                                        {`Score: ${
-                                            approach === Approach.Hybrid && useSemanticRanker ? result["@search.reranker_score"] : result["@search.score"]
-                                        }`}
-                                    </p>
-                                </div>
-                            </Stack>
-                        ))}
+                            ))}
+                        </Stack>
                     </>
                 )}
             </div>
@@ -157,32 +237,45 @@ const Vector: React.FC = () => {
                 onRenderFooterContent={() => <DefaultButton onClick={() => setIsConfigPanelOpen(false)}>Close</DefaultButton>}
                 isFooterAtBottom={true}
             >
-                <ChoiceGroup label="Retrieval mode" options={approaches} defaultSelectedKey={Approach.Vector} onChange={onApproachChange} />
-                {approach === Approach.VectorFilter && (
-                    <TextField
-                        label="Filter"
-                        value={filterText}
-                        onChange={(_ev, newValue) => setFilterText(newValue ?? "")}
-                        placeholder="(e.g. category eq 'Databases')"
-                    />
-                )}
-                {approach === Approach.Hybrid && (
-                    <>
+                <Toggle
+                    label="Show scores"
+                    checked={!hideScores}
+                    inlineLabel
+                    onChange={(_, checked) => {
+                        checked ? setHideScores(false) : setHideScores(true);
+                    }}
+                />
+                <p className={styles.retrievalMode}>Retrieval mode</p>
+                {approaches.map(approach => (
+                    <div key={approach.key}>
                         <Checkbox
                             className={styles.vectorSettingsSeparator}
-                            checked={useSemanticRanker}
-                            label="Use semantic ranker for retrieval"
-                            onChange={onUseSemanticRankerChange}
+                            checked={selectedApproachKeys.includes(approach.key)}
+                            label={approach.title}
+                            onChange={(_ev, checked) => onApproachChange(_ev, checked, approach)}
+                            disabled={selectedApproachKeys.length == MaxSelectedModes && !selectedApproachKeys.includes(approach.key)}
                         />
-                        <Checkbox
-                            className={styles.vectorSettingsSeparator}
-                            checked={useSemanticCaptions}
-                            label="Use semantic captions"
-                            onChange={onUseSemanticCaptionsChange}
-                            disabled={!useSemanticRanker}
-                        />
-                    </>
-                )}
+                        {approach.key === "vecf" && selectedApproachKeys.includes("vecf") && (
+                            <TextField
+                                label="Filter"
+                                value={filterText}
+                                onChange={(_ev, newValue) => setFilterText(newValue ?? "")}
+                                placeholder="(e.g. category eq 'Databases')"
+                            />
+                        )}
+                        {approach.key === "hssr" && selectedApproachKeys.includes("hssr") && (
+                            <>
+                                <Checkbox
+                                    className={styles.checkboxSemanticCaption}
+                                    checked={useSemanticCaptions}
+                                    label="Use semantic captions"
+                                    onChange={onUseSemanticCaptionsChange}
+                                    styles={{ checkbox: { borderRadius: "100%" } }}
+                                />
+                            </>
+                        )}
+                    </div>
+                ))}
 
                 {textQueryVector && (
                     <>

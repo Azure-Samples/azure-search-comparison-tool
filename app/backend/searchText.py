@@ -12,24 +12,25 @@ class SearchText:
     def search(
         self,
         query: str,
-        approach: str,
-        use_semantic_ranker: bool,
-        use_semantic_captions: bool,
-        overrides: dict[str, Any],
+        use_vector_search: bool = False,
+        use_hybrid_search: bool = False,
+        use_semantic_ranker: bool = False,
+        use_semantic_captions: bool = False,
+        select: str | None = None,
+        k: int | None = None,
+        filter: str | None = None,
     ):
         # Vectorize query
-        query_vector = self.embed_query(query)
+        query_vector = self.embed_query(query) if use_vector_search else None
+        vector_fields = "contentVector" if use_vector_search else None
+        k = k if use_vector_search else None
 
-        # Set overrides for default parameters
-        vector_fields = overrides.get("vectorFields") or "contentVector"
-        k = overrides.get("k") or 10
-        select = overrides.get("select")
-
-        # Set text query if 'Hybrid' approach is selected
-        query_text = query if approach == "hs" else None
-
-        # Set filter if 'Vectors + filter' approach is selected
-        filter = overrides.get("filter") if approach == "vecf" else None
+        # Set text query for no-vector, semantic and 'Hybrid' searches
+        query_text = (
+            query
+            if not use_vector_search or use_hybrid_search or use_semantic_ranker
+            else None
+        )
 
         # Semantic ranker options
         query_type = QueryType.SEMANTIC if use_semantic_ranker else None

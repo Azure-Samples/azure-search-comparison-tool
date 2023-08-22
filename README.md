@@ -97,7 +97,7 @@ In a second terminal run the frontend:
 
 ## Conclusion
 
-I hope you find this repository useful for querying your multilingual index with semantic search. Feel free to explore and customize the code to meet your specific requirements.
+I hope you find this repository useful for demoing Vector search and exploring the different features Azure Cognitive Search has to offer. Feel free to explore and customize the code to meet your specific requirements.
 If you have any questions or suggestions, please feel free to open an issue and I'll be happy to help.
 
 Happy searching!

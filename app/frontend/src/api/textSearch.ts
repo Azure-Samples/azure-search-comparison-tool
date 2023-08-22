@@ -1,22 +1,38 @@
 import axios from "axios";
-import { Approach, SearchResponse, TextSearchRequest, TextSearchResult } from "./types";
+import { SearchResponse, TextSearchRequest, TextSearchResult } from "./types";
 
 export const getTextSearchResults = async (
-    approach: Approach,
+    approach: "text" | "vec" | "hs" | "vecf" | "hssr" | undefined,
     searchQuery: string,
-    useSemanticRanker: boolean,
     useSemanticCaptions: boolean,
-    filterText: string
+    filterText?: string,
+    select?: string,
+    k?: number
 ): Promise<SearchResponse<TextSearchResult>> => {
     const requestBody: TextSearchRequest = {
-        approach: approach,
         query: searchQuery,
-        useSemanticRanker: useSemanticRanker,
-        useSemanticCaptions: useSemanticCaptions,
-        overrides: {
-            filter: filterText
-        }
+        select: select,
+        vectorSearch: false,
+        hybridSearch: false
     };
+
+    if (approach === "vec" || approach === "hs" || approach === "vecf" || approach === "hssr") {
+        requestBody.vectorSearch = true;
+        requestBody.k = k;
+
+        if (approach === "vecf") {
+            requestBody.filter = filterText;
+        }
+
+        if (approach === "hs") {
+            requestBody.hybridSearch = true;
+        }
+
+        if (approach === "hssr") {
+            requestBody.useSemanticRanker = true;
+            requestBody.useSemanticCaptions = useSemanticCaptions;
+        }
+    }
 
     const response = await axios.post<SearchResponse<TextSearchResult>>("/searchText", requestBody);
 

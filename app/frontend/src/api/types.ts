@@ -1,20 +1,19 @@
-export enum Approach {
-    Vector = "vec",
-    VectorFilter = "vecf",
-    Hybrid = "hs"
+export type ApproachKey = "text" | "vec" | "vecf" | "hs" | "hssr";
+
+export interface Approach {
+    key: ApproachKey;
+    title: string;
 }
 
 export interface TextSearchRequest {
-    approach: Approach;
     query: string;
+    vectorSearch?: boolean;
+    hybridSearch?: boolean;
+    select?: string;
+    k?: number;
+    filter?: string;
     useSemanticRanker?: boolean;
     useSemanticCaptions?: boolean;
-    overrides?: {
-        vectorFields?: string;
-        k?: number;
-        filter?: string;
-        select?: string;
-    };
 }
 
 export interface ImageSearchRequest {
@@ -58,4 +57,17 @@ export interface ImageSearchResult extends SearchResult {
     id: string;
     title: string;
     imageUrl: string;
+}
+
+export interface ResultCard {
+    approachKey: string;
+    searchResults: TextSearchResult[];
+    semanticAnswer: SemanticAnswer | null;
+}
+
+export interface AxiosErrorResponseData {
+    error: {
+        code: string;
+        message: string;
+    };
 }

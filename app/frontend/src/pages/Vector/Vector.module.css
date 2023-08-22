@@ -42,6 +42,7 @@
     background: white;
     display: flex;
     margin-bottom: 1rem;
+    height: 200px;
 }
 
 .searchResultCard {
@@ -53,6 +54,8 @@
     padding: 10px;
     background: white;
     display: flex;
+    margin-bottom: 1rem;
+    height: 275px;
 }
 
 .textContainer {
@@ -99,4 +102,20 @@
     gap: 10px;
     flex: 1;
     justify-content: center;
+}
+
+.retrievalMode {
+    font-size: 14px;
+    margin-top: 5px;
+    font-weight: bold;
+}
+
+.checkboxSemanticCaption {
+    margin-top: 15px;
+    margin-left: 15px;
+}
+
+.approach {
+    font-size: 18px;
+    margin-left: 10px;
 }
