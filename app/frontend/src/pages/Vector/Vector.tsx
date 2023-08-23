@@ -72,11 +72,12 @@ const Vector: React.FC = () => {
                     const results = await getTextSearchResults(approachKey, query, useSemanticCaptions, filterText, queryVector);
                     const searchResults = results.results;
                     const semanticAnswer = results.semanticAnswers?.[0] ? results.semanticAnswers[0] : null;
-                    return {
+                    const resultCard: ResultCard = {
                         approachKey,
                         searchResults,
                         semanticAnswer
-                    } as ResultCard;
+                    };
+                    return resultCard;
                 })
             )
                 .then(results => {
@@ -89,7 +90,7 @@ const Vector: React.FC = () => {
                         data ? (searchErrors = [`${String(data.error)}`, ...searchErrors]) : (searchErrors = [`${err.message}`, ...searchErrors]);
                     });
                 })
-                .catch(e => (searchErrors = searchErrors.concat(e as string)))
+                .catch(e => (searchErrors = searchErrors.concat(String(e))))
                 .finally(() => {
                     setResultCards(resultsList);
                     setErrors(searchErrors);

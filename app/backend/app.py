@@ -68,7 +68,7 @@ def embed_query():
        response = openai.Embedding.create(input=query, engine=AZURE_OPENAI_DEPLOYMENT_NAME)
        return response["data"][0]["embedding"], 200
     except Exception as e:
-        logging.exception("Exception in /searchText")
+        logging.exception("Exception in /embedQuery")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/searchText", methods=["POST"])
