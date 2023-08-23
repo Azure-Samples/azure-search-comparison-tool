@@ -1,13 +1,13 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { Checkbox, DefaultButton, MessageBar, MessageBarType, Panel, Spinner, Stack, TextField, Toggle } from "@fluentui/react";
 import { DismissCircle24Filled, Search24Regular, Settings20Regular } from "@fluentui/react-icons";
-import { AxiosError } from "axios";
 
 import styles from "./Vector.module.css";
 
-import { TextSearchResult, Approach, AxiosErrorResponseData, ResultCard, ApproachKey } from "../../api/types";
-import { getTextSearchResults } from "../../api/textSearch";
+import { TextSearchResult, Approach, ResultCard, ApproachKey, AxiosErrorResponseData } from "../../api/types";
+import { getEmbeddings, getTextSearchResults } from "../../api/textSearch";
 import SampleCard from "../../components/SampleCards";
+import { AxiosError } from "axios";
 
 const MaxSelectedModes = 4;
 
@@ -46,7 +46,7 @@ const Vector: React.FC = () => {
                 setResultCards([]);
                 return;
             }
-
+            setTextQueryVector([]);
             setLoading(true);
 
             let searchApproachKeys = selectedApproachKeys;
@@ -58,36 +58,45 @@ const Vector: React.FC = () => {
             let resultsList: ResultCard[] = [];
             let searchErrors: string[] = [];
             let queryVector: number[] = [];
-            for (const approachKey of searchApproachKeys) {
+            if (!(searchApproachKeys.length === 1 && searchApproachKeys[0] === "text")) {
                 try {
-                    const results = await getTextSearchResults(approachKey, query, useSemanticCaptions, filterText);
-                    const searchResults = results.results;
-                    const semanticAnswer = results.semanticAnswers?.[0] ? results.semanticAnswers[0] : null;
-                    resultsList = resultsList.concat({
-                        approachKey,
-                        searchResults,
-                        semanticAnswer
-                    });
-
-                    if (results.queryVector) {
-                        queryVector = results.queryVector;
-                    }
+                    queryVector = await getEmbeddings(query);
+                    setTextQueryVector(queryVector);
                 } catch (e) {
-                    const errorMsg = `Failed to fetch results for [${approaches.find(a => a.key === approachKey)?.title}] retrieval mode`;
-                    const error = e as AxiosError;
-                    const data = error.response?.data as AxiosErrorResponseData;
-                    data
-                        ? (searchErrors = [`${errorMsg}. Details: ${data.error.message}`, ...searchErrors])
-                        : (searchErrors = [`${errorMsg}. Details: ${error.message}`, ...searchErrors]);
+                    searchErrors = searchErrors.concat(e as string);
                 }
             }
 
-            setErrors(searchErrors);
-            setResultCards(resultsList);
-            setTextQueryVector(queryVector);
-            setLoading(false);
+            Promise.allSettled(
+                searchApproachKeys.map(async approachKey => {
+                    const results = await getTextSearchResults(approachKey, query, useSemanticCaptions, filterText, queryVector);
+                    const searchResults = results.results;
+                    const semanticAnswer = results.semanticAnswers?.[0] ? results.semanticAnswers[0] : null;
+                    return {
+                        approachKey,
+                        searchResults,
+                        semanticAnswer
+                    } as ResultCard;
+                })
+            )
+                .then(results => {
+                    const promiseResultsList = results.filter(result => result.status === "fulfilled") as PromiseFulfilledResult<ResultCard>[];
+                    resultsList = promiseResultsList.map(r => r.value);
+                    const errors = results.filter(result => result.status === "rejected") as PromiseRejectedResult[];
+                    errors.map(e => {
+                        const err = e.reason as AxiosError;
+                        const data = err.response?.data as AxiosErrorResponseData;
+                        data ? (searchErrors = [`${String(data.error)}`, ...searchErrors]) : (searchErrors = [`${err.message}`, ...searchErrors]);
+                    });
+                })
+                .catch(e => (searchErrors = searchErrors.concat(e as string)))
+                .finally(() => {
+                    setResultCards(resultsList);
+                    setErrors(searchErrors);
+                    setLoading(false);
+                });
         },
-        [selectedApproachKeys, filterText, useSemanticCaptions, approaches]
+        [selectedApproachKeys, useSemanticCaptions, filterText]
     );
 
     const handleOnKeyDown = useCallback(
