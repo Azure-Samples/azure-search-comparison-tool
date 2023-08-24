@@ -22,15 +22,7 @@ export interface ImageSearchRequest {
 }
 
 export interface SearchResponse<T extends SearchResult> {
-    semanticAnswers: SemanticAnswer[] | null;
     results: T[];
-}
-
-export interface SemanticAnswer {
-    key: string;
-    text: string;
-    highlights: string;
-    score: number;
 }
 
 interface SearchResult {
@@ -62,7 +54,6 @@ export interface ImageSearchResult extends SearchResult {
 export interface ResultCard {
     approachKey: string;
     searchResults: TextSearchResult[];
-    semanticAnswer: SemanticAnswer | null;
 }
 
 export interface AxiosErrorResponseData {

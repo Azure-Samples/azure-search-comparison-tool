@@ -1,4 +1,6 @@
 azure-identity==1.14.0
 azure-search-documents==11.4.0b6
-Flask==2.3.2
+quart==0.18.4
 openai[datalib]==0.27.8
+uvicorn[standard]==0.23.2
+aiohttp==3.8.5

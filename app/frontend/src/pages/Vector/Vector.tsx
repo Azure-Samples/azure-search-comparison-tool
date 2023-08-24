@@ -64,6 +64,9 @@ const Vector: React.FC = () => {
                     setTextQueryVector(queryVector);
                 } catch (e) {
                     searchErrors = searchErrors.concat(e as string);
+                    setErrors(searchErrors);
+                    setLoading(false);
+                    return;
                 }
             }
 
@@ -71,11 +74,9 @@ const Vector: React.FC = () => {
                 searchApproachKeys.map(async approachKey => {
                     const results = await getTextSearchResults(approachKey, query, useSemanticCaptions, filterText, queryVector);
                     const searchResults = results.results;
-                    const semanticAnswer = results.semanticAnswers?.[0] ? results.semanticAnswers[0] : null;
                     const resultCard: ResultCard = {
                         approachKey,
-                        searchResults,
-                        semanticAnswer
+                        searchResults
                     };
                     return resultCard;
                 })
@@ -171,20 +172,7 @@ const Vector: React.FC = () => {
                             {resultCards.map(resultCard => (
                                 <div key={resultCard.approachKey}>
                                     <p className={styles.approach}>{approaches.find(a => a.key === resultCard.approachKey)?.title} </p>
-                                    {!resultCard.semanticAnswer && !resultCard.searchResults.length && (
-                                        <p className={styles.searchResultCardTitle}>{"No Results Found"} </p>
-                                    )}
-                                    {/* {resultCard.semanticAnswer && (
-                                        <Stack horizontal className={styles.semanticAnswerCard}>
-                                            <div className={styles.textContainer}>
-                                                <p
-                                                    dangerouslySetInnerHTML={{
-                                                        __html: resultCard.semanticAnswer.highlights
-                                                    }}
-                                                ></p>
-                                            </div>
-                                        </Stack>
-                                    )} */}
+                                    {!resultCard.searchResults.length && <p className={styles.searchResultCardTitle}>{"No results found"} </p>}
                                     {resultCard.searchResults.map((result: TextSearchResult) => (
                                         <Stack horizontal className={styles.searchResultCard} key={result.id}>
                                             <div className={styles.textContainer}>
