@@ -61,6 +61,15 @@ app = Flask(__name__)
 def static_file(path):
     return app.send_static_file(path)
 
+@app.route("/embedQuery", methods=["POST"])
+def embed_query():
+    try:
+       query=request.json["query"]
+       response = openai.Embedding.create(input=query, engine=AZURE_OPENAI_DEPLOYMENT_NAME)
+       return response["data"][0]["embedding"], 200
+    except Exception as e:
+        logging.exception("Exception in /embedQuery")
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/searchText", methods=["POST"])
 def search_text():
@@ -86,6 +95,9 @@ def search_text():
             if request.json.get("useSemanticCaptions")
             else False
         )
+        query_vector = (
+            request.json["queryVector"] if request.json.get("queryVector") else None
+        )
 
         r = SearchText(search_client_text, AZURE_OPENAI_DEPLOYMENT_NAME).search(
             query=request.json["query"],
@@ -96,6 +108,7 @@ def search_text():
             select=select,
             k=k,
             filter=filter,
+            query_vector=query_vector
         )
 
         return jsonify(r), 200

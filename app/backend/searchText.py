@@ -19,9 +19,10 @@ class SearchText:
         select: str | None = None,
         k: int | None = None,
         filter: str | None = None,
+        query_vector: list[float] | None = None
     ):
         # Vectorize query
-        query_vector = self.embed_query(query) if use_vector_search else None
+        query_vector = query_vector if use_vector_search else None
         vector_fields = "contentVector" if use_vector_search else None
         k = k if use_vector_search else None
 
@@ -90,12 +91,5 @@ class SearchText:
 
         return {
             "results": results,
-            "queryVector": query_vector,
             "semanticAnswers": search_results.get_answers(),
         }
-
-    def embed_query(self, query: str):
-        response = openai.Embedding.create(
-            input=query, engine=self.embedding_deployment
-        )
-        return response["data"][0]["embedding"]

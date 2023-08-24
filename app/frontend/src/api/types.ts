@@ -14,6 +14,7 @@ export interface TextSearchRequest {
     filter?: string;
     useSemanticRanker?: boolean;
     useSemanticCaptions?: boolean;
+    queryVector?: number[];
 }
 
 export interface ImageSearchRequest {
@@ -21,7 +22,6 @@ export interface ImageSearchRequest {
 }
 
 export interface SearchResponse<T extends SearchResult> {
-    queryVector: number[];
     semanticAnswers: SemanticAnswer[] | null;
     results: T[];
 }
