@@ -196,26 +196,13 @@ const Vector: React.FC = () => {
                                                     )}
                                                 </Stack>
                                                 <p
-                                                    style={{ fontSize: "12px" }}
+                                                    className={styles.content}
                                                     dangerouslySetInnerHTML={{
-                                                        __html:
-                                                            (
-                                                                (result["@search.captions"]?.[0].highlights
-                                                                    ? result["@search.captions"][0].highlights.slice(0, 350)
-                                                                    : result["@search.captions"]?.[0].text
-                                                                    ? result["@search.captions"][0].text.slice(0, 350)
-                                                                    : result.content.slice(0, 300)) || ""
-                                                            ).length >= 300
-                                                                ? ((result["@search.captions"]?.[0].highlights
-                                                                      ? result["@search.captions"][0].highlights.slice(0, 350)
-                                                                      : result["@search.captions"]?.[0].text
-                                                                      ? result["@search.captions"][0].text.slice(0, 350)
-                                                                      : result.content.slice(0, 300)) || "") + "..."
-                                                                : (result["@search.captions"]?.[0].highlights
-                                                                      ? result["@search.captions"][0].highlights.slice(0, 350)
-                                                                      : result["@search.captions"]?.[0].text
-                                                                      ? result["@search.captions"][0].text.slice(0, 350)
-                                                                      : result.content.slice(0, 300)) || ""
+                                                        __html: result["@search.captions"]?.[0].highlights
+                                                            ? result["@search.captions"][0].highlights
+                                                            : result["@search.captions"]?.[0].text
+                                                            ? result["@search.captions"][0].text
+                                                            : result.content
                                                     }}
                                                 />
                                             </div>

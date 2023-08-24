@@ -55,7 +55,7 @@
     background: white;
     display: flex;
     margin-bottom: 1rem;
-    height: 275px;
+    height: auto;
 }
 
 .textContainer {
@@ -116,6 +116,18 @@
 }
 
 .approach {
-    font-size: 18px;
+    font-size: 16px;
     margin-left: 10px;
+    margin-top: 0;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.content {
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
 }
