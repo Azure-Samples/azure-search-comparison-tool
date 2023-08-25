@@ -7,15 +7,18 @@ from io import BytesIO
 from quart import Quart, request, jsonify, Blueprint, current_app
 from azure.identity.aio import DefaultAzureCredential
 from azure.search.documents.aio import SearchClient
+from azure.search.documents.indexes.aio import SearchIndexClient
 
 from searchText import SearchText
 from searchImages import SearchImages
+from indexSchema import IndexSchema
 
 CONFIG_OPENAI_TOKEN = "openai_token"
 CONFIG_CREDENTIAL = "azure_credential"
 CONFIG_EMBEDDING_DEPLOYMENT = "embedding_deployment"
 CONFIG_SEARCH_TEXT_INDEX = "search_text"
 CONFIG_SEARCH_IMAGES_INDEX = "search_images"
+CONFIG_INDEX = "index"
 
 bp = Blueprint("routes", __name__, static_folder="static")
 
@@ -102,6 +105,25 @@ async def search_images():
         logging.exception("Exception in /searchImages")
         return jsonify({"error": str(e)}), 500
 
+@bp.route("/getEfSearch", methods=["GET"])
+async def get_efsearch():
+    try:
+        ef_search = await current_app.config[CONFIG_INDEX].get_efsearch()
+        return str(ef_search), 200
+    except Exception as e:
+        logging.exception("Exception in /getEfSearch")
+        return jsonify({"error": str(e)}), 500
+
+@bp.route("/updateEfSearch", methods=["POST"])
+async def update_efsearch():
+    try:
+        request_json = await request.get_json()
+        newValue = request_json["efSearch"] if request_json.get("efSearch") else None
+        ef_search = await current_app.config[CONFIG_INDEX].update_efsearch(int(newValue))
+        return str(ef_search), 200
+    except Exception as e:
+        logging.exception("Exception in /updateEfSearch")
+        return jsonify({"error": str(e)}), 500
 
 @bp.before_request
 async def ensure_openai_token():
@@ -179,6 +201,10 @@ async def setup_clients():
         index_name=AZURE_SEARCH_IMAGE_INDEX_NAME,
         credential=azure_credential,
     )
+    index_client = SearchIndexClient(
+        endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
+        credential=azure_credential,
+)
 
     # Store on app.config for later use inside requests
     current_app.config[CONFIG_OPENAI_TOKEN] = openai_token
@@ -191,6 +217,7 @@ async def setup_clients():
         AZURE_VISIONAI_API_VERSION,
         AZURE_VISIONAI_KEY,
     )
+    current_app.config[CONFIG_INDEX] = IndexSchema(index_client, AZURE_SEARCH_TEXT_INDEX_NAME)
 
 
 def create_app():
