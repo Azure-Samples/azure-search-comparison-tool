@@ -55,11 +55,21 @@
     background: white;
     display: flex;
     margin-bottom: 1rem;
-    height: auto;
+    height: 180px;
+}
+
+.resultCardContainer {
+    min-width: 25%;
+    width: 100%;
+}
+
+.titleContainer {
+    width: 75%;
 }
 
 .textContainer {
     flex: 1;
+    max-width: 100%;
 }
 
 .scoreContainer {
@@ -72,6 +82,12 @@
 .searchResultCardTitle {
     font-size: 18px;
     margin-bottom: 0;
+    height: 28px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
 }
 
 .category {
@@ -82,12 +98,20 @@
     padding: 2px 6px;
     border-radius: 4px;
     margin-top: 10px;
+    height: 20px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    width: fit-content;
 }
 
 .score {
-    font-size: 14px;
+    font-size: 12px;
     color: #0078d4;
     font-weight: bold;
+    text-align: right;
 }
 
 .vectorSettingsSeparator {
@@ -119,8 +143,14 @@
     font-size: 16px;
     margin-left: 10px;
     margin-top: 0;
-    margin-bottom: 5px;
     font-weight: 500;
+    height: 25px;
+    width: fit-content;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
 }
 
 .content {
