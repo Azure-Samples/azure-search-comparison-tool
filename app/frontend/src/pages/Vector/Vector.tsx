@@ -213,14 +213,14 @@ const Vector: React.FC = () => {
                     <>
                         <Stack horizontal tokens={{ childrenGap: "12px" }}>
                             {resultCards.map(resultCard => (
-                                <div key={resultCard.approachKey}>
+                                <div key={resultCard.approachKey} className={styles.resultCardContainer}>
                                     <p className={styles.approach}>{approaches.find(a => a.key === resultCard.approachKey)?.title} </p>
                                     {!resultCard.searchResults.length && <p className={styles.searchResultCardTitle}>{"No results found"} </p>}
                                     {resultCard.searchResults.map((result: TextSearchResult) => (
                                         <Stack horizontal className={styles.searchResultCard} key={result.id}>
                                             <div className={styles.textContainer}>
                                                 <Stack horizontal horizontalAlign="space-between">
-                                                    <div>
+                                                    <div className={styles.titleContainer}>
                                                         <p className={styles.searchResultCardTitle}>{result.title} </p>
                                                         <p className={styles.category}>{result.category}</p>
                                                     </div>
