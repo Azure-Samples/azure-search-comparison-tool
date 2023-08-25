@@ -1,106 +1,76 @@
 import os
 import time
 import logging
+import gzip
 import openai
-from flask import Flask, request, jsonify
-from azure.identity import DefaultAzureCredential
-from azure.search.documents import SearchClient
+from io import BytesIO
+from quart import Quart, request, jsonify, Blueprint, current_app
+from azure.identity.aio import DefaultAzureCredential
+from azure.search.documents.aio import SearchClient
 
 from searchText import SearchText
 from searchImages import SearchImages
 
-# Replace these with your own values, either in environment variables or directly here
-AZURE_OPENAI_SERVICE = os.environ.get("AZURE_OPENAI_SERVICE")
-AZURE_OPENAI_DEPLOYMENT_NAME = (
-    os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME") or "embedding"
-)
-AZURE_VISIONAI_ENDPOINT = os.environ.get("AZURE_VISIONAI_ENDPOINT")
-AZURE_VISIONAI_KEY = os.environ.get("AZURE_VISIONAI_KEY")
-AZURE_VISIONAI_API_VERSION = (
-    os.environ.get("AZURE_VISIONAI_API_VERSION") or "2023-02-01-preview"
-)
-AZURE_SEARCH_SERVICE_ENDPOINT = os.environ.get("AZURE_SEARCH_SERVICE_ENDPOINT")
-AZURE_SEARCH_TEXT_INDEX_NAME = os.environ.get("AZURE_SEARCH_TEXT_INDEX_NAME")
-AZURE_SEARCH_IMAGE_INDEX_NAME = os.environ.get("AZURE_SEARCH_IMAGE_INDEX_NAME")
+CONFIG_OPENAI_TOKEN = "openai_token"
+CONFIG_CREDENTIAL = "azure_credential"
+CONFIG_EMBEDDING_DEPLOYMENT = "embedding_deployment"
+CONFIG_SEARCH_TEXT_INDEX = "search_text"
+CONFIG_SEARCH_IMAGES_INDEX = "search_images"
+
+bp = Blueprint("routes", __name__, static_folder="static")
 
 
-# Use the current user identity to authenticate with Azure OpenAI, Cognitive Search and AI Vision (no secrets needed, just use 'az login' locally, and managed identity when deployed on Azure).
-# If you need to use keys, use separate AzureKeyCredential instances with the keys for each service.
-# If you encounter a blocking error during a DefaultAzureCredntial resolution, you can exclude the problematic credential by using a parameter (ex. exclude_shared_token_cache_credential=True).
-azure_credential = DefaultAzureCredential(exclude_shared_token_cache_credential=True)
-
-# Used by the OpenAI SDK
-openai.api_type = "azure"
-openai.api_base = f"https://{AZURE_OPENAI_SERVICE}.openai.azure.com"
-openai.api_version = "2023-05-15"
-
-# Comment these two lines out if using keys, set your API key in the OPENAI_API_KEY environment variable instead
-openai.api_type = "azure_ad"
-openai_token = azure_credential.get_token(
-    "https://cognitiveservices.azure.com/.default"
-)
-openai.api_key = openai_token.token
-
-# Set up clients for Cognitive Search
-search_client_text = SearchClient(
-    endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
-    index_name=AZURE_SEARCH_TEXT_INDEX_NAME,
-    credential=azure_credential,
-)
-search_client_images = SearchClient(
-    endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
-    index_name=AZURE_SEARCH_IMAGE_INDEX_NAME,
-    credential=azure_credential,
-)
-
-app = Flask(__name__)
+@bp.route("/", defaults={"path": "index.html"})
+@bp.route("/<path:path>")
+async def static_file(path):
+    return await bp.send_static_file(path)
 
 
-@app.route("/", defaults={"path": "index.html"})
-@app.route("/<path:path>")
-def static_file(path):
-    return app.send_static_file(path)
-
-@app.route("/embedQuery", methods=["POST"])
-def embed_query():
+@bp.route("/embedQuery", methods=["POST"])
+async def embed_query():
     try:
-       query=request.json["query"]
-       response = openai.Embedding.create(input=query, engine=AZURE_OPENAI_DEPLOYMENT_NAME)
-       return response["data"][0]["embedding"], 200
+        request_json = await request.get_json()
+        query = request_json["query"]
+        response = await openai.Embedding.acreate(
+            input=query, engine=current_app.config[CONFIG_EMBEDDING_DEPLOYMENT]
+        )
+        return response["data"][0]["embedding"], 200
     except Exception as e:
         logging.exception("Exception in /embedQuery")
         return jsonify({"error": str(e)}), 500
 
-@app.route("/searchText", methods=["POST"])
-def search_text():
-    if not request.json:
+
+@bp.route("/searchText", methods=["POST"])
+async def search_text():
+    if not request.is_json:
         return jsonify({"error": "request must be json"}), 400
     try:
+        request_json = await request.get_json()
         vector_search = (
-            request.json["vectorSearch"] if request.json.get("vectorSearch") else False
+            request_json["vectorSearch"] if request_json.get("vectorSearch") else False
         )
         hybrid_search = (
-            request.json["hybridSearch"] if request.json.get("hybridSearch") else False
+            request_json["hybridSearch"] if request_json.get("hybridSearch") else False
         )
-        select = request.json["select"] if request.json.get("select") else None
-        k = request.json["k"] if request.json.get("k") else 10
-        filter = request.json["filter"] if request.json.get("filter") else None
+        select = request_json["select"] if request_json.get("select") else None
+        k = request_json["k"] if request_json.get("k") else 10
+        filter = request_json["filter"] if request_json.get("filter") else None
         use_semantic_ranker = (
-            request.json["useSemanticRanker"]
-            if request.json.get("useSemanticRanker")
+            request_json["useSemanticRanker"]
+            if request_json.get("useSemanticRanker")
             else False
         )
         use_semantic_captions = (
-            request.json["useSemanticCaptions"]
-            if request.json.get("useSemanticCaptions")
+            request_json["useSemanticCaptions"]
+            if request_json.get("useSemanticCaptions")
             else False
         )
         query_vector = (
-            request.json["queryVector"] if request.json.get("queryVector") else None
+            request_json["queryVector"] if request_json.get("queryVector") else None
         )
 
-        r = SearchText(search_client_text, AZURE_OPENAI_DEPLOYMENT_NAME).search(
-            query=request.json["query"],
+        r = await current_app.config[CONFIG_SEARCH_TEXT_INDEX].search(
+            query=request_json["query"],
             use_vector_search=vector_search,
             use_hybrid_search=hybrid_search,
             use_semantic_ranker=use_semantic_ranker,
@@ -108,7 +78,7 @@ def search_text():
             select=select,
             k=k,
             filter=filter,
-            query_vector=query_vector
+            query_vector=query_vector,
         )
 
         return jsonify(r), 200
@@ -117,18 +87,15 @@ def search_text():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/searchImages", methods=["POST"])
-def search_images():
-    if not request.json:
+@bp.route("/searchImages", methods=["POST"])
+async def search_images():
+    if not request.is_json:
         return jsonify({"error": "request must be json"}), 400
     try:
-        r = SearchImages(
-            search_client_images,
-            AZURE_OPENAI_DEPLOYMENT_NAME,
-            AZURE_VISIONAI_ENDPOINT,
-            AZURE_VISIONAI_API_VERSION,
-            AZURE_VISIONAI_KEY,
-        ).search(request.json["query"])
+        request_json = await request.get_json()
+        r = await current_app.config[CONFIG_SEARCH_IMAGES_INDEX].search(
+            request_json["query"]
+        )
 
         return jsonify(r), 200
     except Exception as e:
@@ -136,15 +103,97 @@ def search_images():
         return jsonify({"error": str(e)}), 500
 
 
-@app.before_request
-def ensure_openai_token():
-    global openai_token
+@bp.before_request
+async def ensure_openai_token():
+    openai_token = current_app.config[CONFIG_OPENAI_TOKEN]
     if openai_token.expires_on < time.time() + 60:
-        openai_token = azure_credential.get_token(
+        openai_token = await current_app.config[CONFIG_CREDENTIAL].get_token(
             "https://cognitiveservices.azure.com/.default"
         )
+        current_app.config[CONFIG_OPENAI_TOKEN] = openai_token
         openai.api_key = openai_token.token
 
 
-if __name__ == "__main__":
-    app.run()
+@bp.after_request
+async def gzip_response(response):
+    accept_encoding = request.headers.get("Accept-Encoding", "")
+    if (
+        response.status_code < 200
+        or response.status_code >= 300
+        or len(await response.get_data()) < 500
+        or "gzip" not in accept_encoding.lower()
+    ):
+        return response
+
+    gzip_buffer = BytesIO()
+    gzip_file = gzip.GzipFile(mode="wb", compresslevel=6, fileobj=gzip_buffer)
+    gzip_file.write(await response.get_data())
+    gzip_file.close()
+    response.set_data(gzip_buffer.getvalue())
+    response.headers["Content-Encoding"] = "gzip"
+    response.headers["Content-Length"] = len(await response.get_data())
+
+    return response
+
+
+@bp.before_app_serving
+async def setup_clients():
+    # Replace these with your own values, either in environment variables or directly here
+    AZURE_OPENAI_SERVICE = os.getenv("AZURE_OPENAI_SERVICE")
+    AZURE_OPENAI_DEPLOYMENT_NAME = (
+        os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME") or "embedding"
+    )
+    AZURE_VISIONAI_ENDPOINT = os.getenv("AZURE_VISIONAI_ENDPOINT")
+    AZURE_VISIONAI_KEY = os.getenv("AZURE_VISIONAI_KEY")
+    AZURE_VISIONAI_API_VERSION = (
+        os.getenv("AZURE_VISIONAI_API_VERSION") or "2023-02-01-preview"
+    )
+    AZURE_SEARCH_SERVICE_ENDPOINT = os.getenv("AZURE_SEARCH_SERVICE_ENDPOINT")
+    AZURE_SEARCH_TEXT_INDEX_NAME = os.getenv("AZURE_SEARCH_TEXT_INDEX_NAME")
+    AZURE_SEARCH_IMAGE_INDEX_NAME = os.getenv("AZURE_SEARCH_IMAGE_INDEX_NAME")
+
+    # Use the current user identity to authenticate with Azure OpenAI, Cognitive Search and AI Vision (no secrets needed, just use 'az login' locally, and managed identity when deployed on Azure).
+    # If you need to use keys, use separate AzureKeyCredential instances with the keys for each service.
+    # If you encounter a blocking error during a DefaultAzureCredntial resolution, you can exclude the problematic credential by using a parameter (ex. exclude_shared_token_cache_credential=True).
+    azure_credential = DefaultAzureCredential(
+        exclude_shared_token_cache_credential=True
+    )
+
+    # Used by the OpenAI SDK
+    openai.api_base = f"https://{AZURE_OPENAI_SERVICE}.openai.azure.com"
+    openai.api_version = "2023-05-15"
+    openai.api_type = "azure_ad"
+    openai_token = await azure_credential.get_token(
+        "https://cognitiveservices.azure.com/.default"
+    )
+    openai.api_key = openai_token.token
+
+    # Set up clients for Cognitive Search
+    search_client_text = SearchClient(
+        endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
+        index_name=AZURE_SEARCH_TEXT_INDEX_NAME,
+        credential=azure_credential,
+    )
+    search_client_images = SearchClient(
+        endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
+        index_name=AZURE_SEARCH_IMAGE_INDEX_NAME,
+        credential=azure_credential,
+    )
+
+    # Store on app.config for later use inside requests
+    current_app.config[CONFIG_OPENAI_TOKEN] = openai_token
+    current_app.config[CONFIG_CREDENTIAL] = azure_credential
+    current_app.config[CONFIG_EMBEDDING_DEPLOYMENT] = AZURE_OPENAI_DEPLOYMENT_NAME
+    current_app.config[CONFIG_SEARCH_TEXT_INDEX] = SearchText(search_client_text)
+    current_app.config[CONFIG_SEARCH_IMAGES_INDEX] = SearchImages(
+        search_client_images,
+        AZURE_VISIONAI_ENDPOINT,
+        AZURE_VISIONAI_API_VERSION,
+        AZURE_VISIONAI_KEY,
+    )
+
+
+def create_app():
+    app = Quart(__name__)
+    app.register_blueprint(bp)
+    return app

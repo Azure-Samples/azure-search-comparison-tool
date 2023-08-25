@@ -31,6 +31,7 @@ export const getTextSearchResults = async (
         }
 
         if (approach === "hssr") {
+            requestBody.hybridSearch = true;
             requestBody.useSemanticRanker = true;
             requestBody.useSemanticCaptions = useSemanticCaptions;
         }

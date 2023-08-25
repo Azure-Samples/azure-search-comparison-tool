@@ -1,15 +1,13 @@
 from typing import Any
-import openai
-from azure.search.documents import SearchClient
+from azure.search.documents.aio import SearchClient
 from azure.search.documents.models import QueryType, QueryCaptionType, QueryAnswerType
 
 
 class SearchText:
-    def __init__(self, search_client: SearchClient, embedding_deployment: str):
+    def __init__(self, search_client: SearchClient):
         self.search_client = search_client
-        self.embedding_deployment = embedding_deployment
 
-    def search(
+    async def search(
         self,
         query: str,
         use_vector_search: bool = False,
@@ -19,16 +17,21 @@ class SearchText:
         select: str | None = None,
         k: int | None = None,
         filter: str | None = None,
-        query_vector: list[float] | None = None
+        query_vector: list[float] | None = None,
     ):
         # Vectorize query
         query_vector = query_vector if use_vector_search else None
         vector_fields = "contentVector" if use_vector_search else None
-        k = k if use_vector_search else None
+        k_vector = k if use_vector_search else None
 
         # Set text query for no-vector, semantic and 'Hybrid' searches
         query_text = (
             query
+            if not use_vector_search or use_hybrid_search or use_semantic_ranker
+            else None
+        )
+        k_text = (
+            k
             if not use_vector_search or use_hybrid_search or use_semantic_ranker
             else None
         )
@@ -47,11 +50,12 @@ class SearchText:
         highlight_post_tag = "</b>" if use_semantic_captions else None
 
         # ACS search query
-        search_results = self.search_client.search(
+        search_results = await self.search_client.search(
             query_text,
             vector=query_vector,
             vector_fields=vector_fields,
-            top_k=k,
+            top_k=k_vector,
+            top=k_text,
             select=select,
             filter=filter,
             query_type=query_type,
@@ -64,7 +68,7 @@ class SearchText:
         )
 
         results = []
-        for r in search_results:
+        async for r in search_results:
             captions = (
                 list(
                     map(
@@ -91,5 +95,4 @@ class SearchText:
 
         return {
             "results": results,
-            "semanticAnswers": search_results.get_answers(),
         }
