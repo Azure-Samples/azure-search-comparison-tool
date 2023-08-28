@@ -18,8 +18,7 @@ const Vector: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [resultCards, setResultCards] = useState<ResultCard[]>([]);
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState<boolean>(false);
-    const [selectedApproachKeys, setSelectedApproachKeys] = useState<ApproachKey[]>(["text"]);
-    const [filterText, setFilterText] = useState<string>("");
+    const [selectedApproachKeys, setSelectedApproachKeys] = useState<ApproachKey[]>(["text", "vec", "hs", "hssr"]);
     const [useSemanticCaptions, setUseSemanticCaptions] = useState<boolean>(false);
     const [hideScores, setHideScores] = React.useState<boolean>(true);
     const [errors, setErrors] = React.useState<string[]>([]);
@@ -32,8 +31,7 @@ const Vector: React.FC = () => {
             { key: "text", title: "Text Only (BM25)" },
             { key: "vec", title: "Vectors Only (ANN)" },
             { key: "hs", title: "Vectors + Text (Hybrid Search)" },
-            { key: "hssr", title: "Hybrid + Semantic Reranking" },
-            { key: "vecf", title: "Vectors with Filter" }
+            { key: "hssr", title: "Hybrid + Semantic Reranking" }
         ],
         []
     );
@@ -68,7 +66,7 @@ const Vector: React.FC = () => {
 
             let searchApproachKeys = selectedApproachKeys;
             if (selectedApproachKeys.length === 0) {
-                searchApproachKeys = ["text"];
+                searchApproachKeys = ["text", "vec", "hs", "hssr"];
             }
             setSelectedApproachKeys(searchApproachKeys);
 
@@ -102,7 +100,7 @@ const Vector: React.FC = () => {
 
             Promise.allSettled(
                 searchApproachKeys.map(async approachKey => {
-                    const results = await getTextSearchResults(approachKey, query, useSemanticCaptions, filterText, queryVector);
+                    const results = await getTextSearchResults(approachKey, query, useSemanticCaptions, queryVector);
                     const searchResults = results.results;
                     const resultCard: ResultCard = {
                         approachKey,
@@ -128,7 +126,7 @@ const Vector: React.FC = () => {
                     setLoading(false);
                 });
         },
-        [selectedApproachKeys, efSearch, efSearchInSchema, useSemanticCaptions, filterText]
+        [selectedApproachKeys, efSearch, efSearchInSchema, useSemanticCaptions]
     );
 
     const handleOnKeyDown = useCallback(
@@ -283,14 +281,6 @@ const Vector: React.FC = () => {
                             onChange={(_ev, checked) => onApproachChange(_ev, checked, approach)}
                             disabled={selectedApproachKeys.length == MaxSelectedModes && !selectedApproachKeys.includes(approach.key)}
                         />
-                        {approach.key === "vecf" && selectedApproachKeys.includes("vecf") && (
-                            <TextField
-                                label="Filter"
-                                value={filterText}
-                                onChange={(_ev, newValue) => setFilterText(newValue ?? "")}
-                                placeholder="(e.g. category eq 'Databases')"
-                            />
-                        )}
                         {approach.key === "hssr" && selectedApproachKeys.includes("hssr") && (
                             <>
                                 <Checkbox

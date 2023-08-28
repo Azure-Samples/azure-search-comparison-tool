@@ -1,4 +1,4 @@
-export type ApproachKey = "text" | "vec" | "vecf" | "hs" | "hssr";
+export type ApproachKey = "text" | "vec" | "hs" | "hssr";
 
 export interface Approach {
     key: ApproachKey;

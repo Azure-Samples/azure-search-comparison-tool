@@ -2,10 +2,9 @@ import axios from "axios";
 import { SearchResponse, TextSearchRequest, TextSearchResult } from "./types";
 
 export const getTextSearchResults = async (
-    approach: "text" | "vec" | "hs" | "vecf" | "hssr" | undefined,
+    approach: "text" | "vec" | "hs" | "hssr" | undefined,
     searchQuery: string,
     useSemanticCaptions: boolean,
-    filterText?: string,
     queryVector?: number[],
     select?: string,
     k?: number
@@ -17,14 +16,10 @@ export const getTextSearchResults = async (
         hybridSearch: false
     };
 
-    if (approach === "vec" || approach === "hs" || approach === "vecf" || approach === "hssr") {
+    if (approach === "vec" || approach === "hs" || approach === "hssr") {
         requestBody.vectorSearch = true;
         requestBody.k = k;
         requestBody.queryVector = queryVector;
-
-        if (approach === "vecf") {
-            requestBody.filter = filterText;
-        }
 
         if (approach === "hs") {
             requestBody.hybridSearch = true;
