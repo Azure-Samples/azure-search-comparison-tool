@@ -8,6 +8,7 @@ import { TextSearchResult, Approach, ResultCard, ApproachKey, AxiosErrorResponse
 import { getEmbeddings, getTextSearchResults } from "../../api/textSearch";
 import SampleCard from "../../components/SampleCards";
 import { AxiosError } from "axios";
+import { getEfSearch, updateEfSearch } from "../../api/indexSchema";
 
 const MaxSelectedModes = 4;
 
@@ -22,6 +23,9 @@ const Vector: React.FC = () => {
     const [useSemanticCaptions, setUseSemanticCaptions] = useState<boolean>(false);
     const [hideScores, setHideScores] = React.useState<boolean>(true);
     const [errors, setErrors] = React.useState<string[]>([]);
+    const [efSearchInSchema, setEfSearchInSchema] = React.useState<string>("");
+    const [efSearch, setEfSearch] = React.useState<string>("");
+    const [validationError, setValidationError] = React.useState<string>("");
 
     const approaches: Approach[] = useMemo(
         () => [
@@ -38,7 +42,20 @@ const Vector: React.FC = () => {
         if (searchQuery === "") {
             setResultCards([]);
         }
-    }, [searchQuery]);
+
+        if (efSearchInSchema === "") {
+            const getEfSearchInSchema = async () => {
+                try {
+                    const currentEfSearch = await getEfSearch();
+                    setEfSearchInSchema(currentEfSearch);
+                    setEfSearch(currentEfSearch);
+                } catch (e) {
+                    setErrors([`Failed to get efSearch value ${String(e)}`]);
+                }
+            };
+            void getEfSearchInSchema();
+        }
+    }, [efSearch, efSearchInSchema, searchQuery]);
 
     const executeSearch = useCallback(
         async (query: string) => {
@@ -58,12 +75,25 @@ const Vector: React.FC = () => {
             let resultsList: ResultCard[] = [];
             let searchErrors: string[] = [];
             let queryVector: number[] = [];
+
+            if (Number(efSearch) !== Number(efSearchInSchema)) {
+                try {
+                    const newEfSearch = await updateEfSearch(efSearch);
+                    setEfSearchInSchema(newEfSearch);
+                } catch (e) {
+                    searchErrors = searchErrors.concat(`Failed to update efSearch value ${String(e)}`);
+                    setErrors(searchErrors);
+                    setLoading(false);
+                    return;
+                }
+            }
+
             if (!(searchApproachKeys.length === 1 && searchApproachKeys[0] === "text")) {
                 try {
                     queryVector = await getEmbeddings(query);
                     setTextQueryVector(queryVector);
                 } catch (e) {
-                    searchErrors = searchErrors.concat(e as string);
+                    searchErrors = searchErrors.concat(`Failed to generate embeddings ${String(e)}`);
                     setErrors(searchErrors);
                     setLoading(false);
                     return;
@@ -98,7 +128,7 @@ const Vector: React.FC = () => {
                     setLoading(false);
                 });
         },
-        [selectedApproachKeys, useSemanticCaptions, filterText]
+        [selectedApproachKeys, efSearch, efSearchInSchema, useSemanticCaptions, filterText]
     );
 
     const handleOnKeyDown = useCallback(
@@ -134,6 +164,19 @@ const Vector: React.FC = () => {
     const onUseSemanticCaptionsChange = useCallback((_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, checked?: boolean) => {
         setUseSemanticCaptions(!!checked);
     }, []);
+
+    const onEfSearchChanged = React.useCallback(
+        (event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, value?: string) => {
+            const numberValue = Number(value);
+            if (!!value && isNaN(numberValue)) {
+                event.preventDefault();
+            } else {
+                setEfSearch(value ?? efSearchInSchema);
+                numberValue > 1000 || numberValue < 100 ? setValidationError("The allowable range is 100 to 1000.") : setValidationError("");
+            }
+        },
+        [efSearchInSchema]
+    );
 
     return (
         <div className={styles.vectorContainer}>
@@ -261,7 +304,7 @@ const Vector: React.FC = () => {
                         )}
                     </div>
                 ))}
-
+                <TextField className={styles.efSearch} label="efSearch" value={efSearch} onChange={onEfSearchChanged} errorMessage={validationError} />
                 {textQueryVector && (
                     <>
                         <p>Embedding model name:</p>
