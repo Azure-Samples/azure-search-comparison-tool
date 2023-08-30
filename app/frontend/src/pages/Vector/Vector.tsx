@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { Checkbox, DefaultButton, MessageBar, MessageBarType, Panel, Spinner, Stack, TextField, Toggle } from "@fluentui/react";
+import { Checkbox, DefaultButton, Dropdown, IDropdownOption, MessageBar, MessageBarType, Panel, Spinner, Stack, TextField, Toggle } from "@fluentui/react";
 import { DismissCircle24Filled, Search24Regular, Settings20Regular } from "@fluentui/react-icons";
 
 import styles from "./Vector.module.css";
@@ -25,6 +25,7 @@ const Vector: React.FC = () => {
     const [efSearchInSchema, setEfSearchInSchema] = React.useState<string>("");
     const [efSearch, setEfSearch] = React.useState<string>("");
     const [validationError, setValidationError] = React.useState<string>("");
+    const [selectedDatasetKey, setSelectedDatasetKey] = React.useState<string | number>("sample");
 
     const approaches: Approach[] = useMemo(
         () => [
@@ -32,6 +33,14 @@ const Vector: React.FC = () => {
             { key: "vec", title: "Vectors Only (ANN)" },
             { key: "hs", title: "Vectors + Text (Hybrid Search)" },
             { key: "hssr", title: "Hybrid + Semantic Reranking" }
+        ],
+        []
+    );
+
+    const Datasets: IDropdownOption[] = useMemo(
+        () => [
+            { key: "sample", text: "Text-sample", title: "This is the current default dataset" },
+            { key: "sample2", text: "Text-sample2", title: "This is the new dataset" }
         ],
         []
     );
@@ -176,6 +185,10 @@ const Vector: React.FC = () => {
         [efSearchInSchema]
     );
 
+    const onDatasetChange = React.useCallback((_event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption): void => {
+        setSelectedDatasetKey(item?.key ?? "sample");
+    }, []);
+
     return (
         <div className={styles.vectorContainer}>
             <Stack horizontal className={styles.questionInputContainer}>
@@ -295,6 +308,7 @@ const Vector: React.FC = () => {
                     </div>
                 ))}
                 <TextField className={styles.efSearch} label="efSearch" value={efSearch} onChange={onEfSearchChanged} errorMessage={validationError} />
+                <Dropdown label="Dataset" selectedKey={selectedDatasetKey} onChange={onDatasetChange} options={Datasets} />
                 {textQueryVector && (
                     <>
                         <p>Embedding model name:</p>
