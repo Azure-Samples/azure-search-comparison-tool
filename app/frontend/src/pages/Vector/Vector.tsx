@@ -191,6 +191,7 @@ const Vector: React.FC = () => {
 
     return (
         <div className={styles.vectorContainer}>
+            <p className={styles.approach}>Dataset: {Datasets.find(d => d.key === selectedDatasetKey)?.text}</p>
             <Stack horizontal className={styles.questionInputContainer}>
                 <Search24Regular />
                 <TextField
