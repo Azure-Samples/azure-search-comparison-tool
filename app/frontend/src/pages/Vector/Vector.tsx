@@ -193,6 +193,7 @@ const Vector: React.FC = () => {
     );
 
     const onDatasetChange = React.useCallback((_event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption): void => {
+        setResultCards([]);
         setSelectedDatasetKey(String(item?.key) ?? "sample");
     }, []);
 
@@ -242,11 +243,6 @@ const Vector: React.FC = () => {
                                                     <div className={styles.titleContainer}>
                                                         <p className={styles.searchResultCardTitle}>{result.title} </p>
                                                         {selectedDatasetKey === "sample" && <p className={styles.category}>{result.category}</p>}
-                                                        {selectedDatasetKey === "wikipedia" && (
-                                                            <a href={result.url} target="_blank" rel="noreferrer">
-                                                                {result.url && decodeURIComponent(result.url).slice(result.url?.lastIndexOf("/") + 1)}
-                                                            </a>
-                                                        )}
                                                     </div>
                                                     {!hideScores && (
                                                         <div className={styles.scoreContainer}>
