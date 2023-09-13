@@ -17,8 +17,15 @@ CONFIG_OPENAI_TOKEN = "openai_token"
 CONFIG_CREDENTIAL = "azure_credential"
 CONFIG_EMBEDDING_DEPLOYMENT = "embedding_deployment"
 CONFIG_SEARCH_TEXT_INDEX = "search_text"
+CONFIG_SEARCH_WIKIPEDIA_INDEX = "search_wikipedia"
 CONFIG_SEARCH_IMAGES_INDEX = "search_images"
 CONFIG_INDEX = "index"
+CONFIG_INDEX_WIKIPEDIA = "index_wikipedia"
+
+dataSetConfigDict = {
+     "sample": CONFIG_SEARCH_TEXT_INDEX,
+     "wikipedia": CONFIG_SEARCH_WIKIPEDIA_INDEX
+}
 
 bp = Blueprint("routes", __name__, static_folder="static")
 
@@ -72,7 +79,10 @@ async def search_text():
             request_json["queryVector"] if request_json.get("queryVector") else None
         )
 
-        r = await current_app.config[CONFIG_SEARCH_TEXT_INDEX].search(
+        data_set = request_json["dataSet"] if request_json.get("dataSet") else "sample"
+        indexConfig = dataSetConfigDict[data_set]
+
+        r = await current_app.config[indexConfig].search(
             query=request_json["query"],
             use_vector_search=vector_search,
             use_hybrid_search=hybrid_search,
@@ -82,6 +92,7 @@ async def search_text():
             k=k,
             filter=filter,
             query_vector=query_vector,
+            data_set=data_set,
         )
 
         return jsonify(r), 200
@@ -119,6 +130,7 @@ async def update_efsearch():
     try:
         request_json = await request.get_json()
         newValue = request_json["efSearch"] if request_json.get("efSearch") else None
+        await current_app.config[CONFIG_INDEX_WIKIPEDIA].update_efsearch(int(newValue))
         ef_search = await current_app.config[CONFIG_INDEX].update_efsearch(int(newValue))
         return str(ef_search), 200
     except Exception as e:
@@ -173,6 +185,7 @@ async def setup_clients():
     AZURE_SEARCH_SERVICE_ENDPOINT = os.getenv("AZURE_SEARCH_SERVICE_ENDPOINT")
     AZURE_SEARCH_TEXT_INDEX_NAME = os.getenv("AZURE_SEARCH_TEXT_INDEX_NAME")
     AZURE_SEARCH_IMAGE_INDEX_NAME = os.getenv("AZURE_SEARCH_IMAGE_INDEX_NAME")
+    AZURE_SEARCH_WIKIPEDIA_INDEX_NAME = os.getenv("AZURE_SEARCH_WIKIPEDIA_INDEX_NAME")
 
     # Use the current user identity to authenticate with Azure OpenAI, Cognitive Search and AI Vision (no secrets needed, just use 'az login' locally, and managed identity when deployed on Azure).
     # If you need to use keys, use separate AzureKeyCredential instances with the keys for each service.
@@ -201,10 +214,15 @@ async def setup_clients():
         index_name=AZURE_SEARCH_IMAGE_INDEX_NAME,
         credential=azure_credential,
     )
+    search_client_wikipedia = SearchClient(
+        endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
+        index_name=AZURE_SEARCH_WIKIPEDIA_INDEX_NAME,
+        credential=azure_credential,
+    )
     index_client = SearchIndexClient(
         endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
         credential=azure_credential,
-)
+    )
 
     # Store on app.config for later use inside requests
     current_app.config[CONFIG_OPENAI_TOKEN] = openai_token
@@ -217,8 +235,9 @@ async def setup_clients():
         AZURE_VISIONAI_API_VERSION,
         AZURE_VISIONAI_KEY,
     )
+    current_app.config[CONFIG_SEARCH_WIKIPEDIA_INDEX] = SearchText(search_client_wikipedia)
     current_app.config[CONFIG_INDEX] = IndexSchema(index_client, AZURE_SEARCH_TEXT_INDEX_NAME)
-
+    current_app.config[CONFIG_INDEX_WIKIPEDIA] = IndexSchema(index_client, AZURE_SEARCH_WIKIPEDIA_INDEX_NAME)
 
 def create_app():
     app = Quart(__name__)

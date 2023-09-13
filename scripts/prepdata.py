@@ -7,6 +7,9 @@ import string
 import time
 import requests
 import uuid
+import wget
+import pandas as pd
+import zipfile
 
 import openai
 from tenacity import retry, wait_random_exponential, stop_after_attempt
@@ -41,6 +44,7 @@ AZURE_VISIONAI_API_VERSION = (
 AZURE_SEARCH_SERVICE_ENDPOINT = os.environ.get("AZURE_SEARCH_SERVICE_ENDPOINT")
 AZURE_SEARCH_TEXT_INDEX_NAME = os.environ.get("AZURE_SEARCH_TEXT_INDEX_NAME")
 AZURE_SEARCH_IMAGE_INDEX_NAME = os.environ.get("AZURE_SEARCH_IMAGE_INDEX_NAME")
+AZURE_SEARCH_WIKIPEDIA_INDEX_NAME = os.environ.get("AZURE_SEARCH_WIKIPEDIA_INDEX_NAME")
 AZURE_STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
 AZURE_STORAGE_CONTAINER = os.environ.get("AZURE_STORAGE_CONTAINER")
 
@@ -238,6 +242,130 @@ def populate_search_index_images():
             search_client.upload_documents(doc)
             print(f"{file}")
 
+def create_and_populate_search_index_wikipedia():
+    created = create_search_index_wikipedia()
+    if created:
+        populate_search_index_wikipedia()
+
+
+def create_search_index_wikipedia():
+    print(f"Ensuring search index {AZURE_SEARCH_WIKIPEDIA_INDEX_NAME} exists")
+    index_client = SearchIndexClient(
+        endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
+        credential=azure_credential,
+    )
+    if AZURE_SEARCH_WIKIPEDIA_INDEX_NAME not in index_client.list_index_names():
+        index = SearchIndex(
+            name=AZURE_SEARCH_WIKIPEDIA_INDEX_NAME,
+            fields=[
+                SimpleField(
+                    name="vector_id",
+                    type=SearchFieldDataType.String,
+                    key=True,
+                    filterable=True,
+                    sortable=True,
+                    facetable=True,
+                ),
+                SimpleField(name="id", type=SearchFieldDataType.String),
+                SimpleField(name="url", type=SearchFieldDataType.String),
+                SearchableField(name="title", type=SearchFieldDataType.String),
+                SearchableField(name="text", type=SearchFieldDataType.String),
+                SearchField(
+                    name="titleVector",
+                    type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
+                    searchable=True,
+                    vector_search_dimensions=1536,
+                    vector_search_configuration="my-vector-config",
+                ),
+                SearchField(
+                    name="contentVector",
+                    type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
+                    searchable=True,
+                    vector_search_dimensions=1536,
+                    vector_search_configuration="my-vector-config",
+                ),
+            ],
+            vector_search=VectorSearch(
+                algorithm_configurations=[
+                    VectorSearchAlgorithmConfiguration(
+                        name="my-vector-config",
+                        kind="hnsw",
+                        hnsw_parameters=HnswParameters(
+                            m=4, ef_construction=400, ef_search=500, metric="cosine"
+                        ),
+                    )
+                ]
+            ),
+            semantic_settings=SemanticSettings(
+                configurations=[
+                    SemanticConfiguration(
+                        name="my-semantic-config",
+                        prioritized_fields=PrioritizedFields(
+                            title_field=SemanticField(field_name="title"),
+                            prioritized_content_fields=[
+                                SemanticField(field_name="text")
+                            ],
+                            prioritized_keywords_fields=[
+                                SemanticField(field_name="url")
+                            ],
+                        ),
+                    )
+                ]
+            ),
+        )
+        print(f"Creating {AZURE_SEARCH_WIKIPEDIA_INDEX_NAME} search index")
+        index_client.create_index(index)
+        return True
+    else:
+        print(f"Search index {AZURE_SEARCH_WIKIPEDIA_INDEX_NAME} already exists")
+        return False
+
+
+def populate_search_index_wikipedia():
+    print(f"Populating search index {AZURE_SEARCH_WIKIPEDIA_INDEX_NAME} with documents")
+
+    embeddings_url = "https://cdn.openai.com/API/examples/data/vector_database_wikipedia_articles_embedded.zip"
+    zipFilename = "vector_database_wikipedia_articles_embedded.zip"
+    csvFilename = "vector_database_wikipedia_articles_embedded.csv"
+    folderPath = "data/wikipedia"
+    zipFilePath = os.path.join(folderPath,zipFilename)
+    cvsFilePath = os.path.join(folderPath,csvFilename)
+    if not os.path.exists(folderPath):
+        os.makedirs(folderPath)
+
+    if not os.path.exists(zipFilePath):
+        wget.download(embeddings_url, out=folderPath)
+    
+    with zipfile.ZipFile(zipFilePath,"r") as zip_ref:
+        zip_ref.extract(csvFilename, folderPath)
+
+    article_df = pd.read_csv(cvsFilePath)
+    article_df.rename(columns = {'title_vector':'titleVector', 'content_vector': 'contentVector'}, inplace=True)
+  
+    # Read vectors from strings back into a list using json.loads  
+    article_df["titleVector"] = article_df.titleVector.apply(json.loads)  
+    article_df["contentVector"] = article_df.contentVector.apply(json.loads)  
+    article_df['id'] = article_df['id'].astype(str)  
+    article_df['vector_id'] = article_df['vector_id'].astype(str)
+    documents = article_df.to_dict(orient='records')
+
+    print(f"Uploading documents...")
+    search_client = SearchClient(
+        endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
+        credential=azure_credential,
+        index_name=AZURE_SEARCH_WIKIPEDIA_INDEX_NAME,
+    )
+
+    batch_size = 250  
+    batches = [documents[i:i + batch_size] for i in range(0, len(documents), batch_size)]  
+  
+    for batch in batches:  
+        search_client.upload_documents(batch) 
+    print(
+        f"Uploaded {len(documents)} documents to index {AZURE_SEARCH_WIKIPEDIA_INDEX_NAME}"
+    )
+
+
 
 def delete_search_index(name: str):
     print(f"Deleting search index {name}")
@@ -336,4 +464,9 @@ if __name__ == "__main__":
         delete_search_index(AZURE_SEARCH_IMAGE_INDEX_NAME)
     create_and_populate_search_index_images()
 
+    # Create wikipedia index
+    if args.recreate:
+        delete_search_index(AZURE_SEARCH_WIKIPEDIA_INDEX_NAME)
+    create_and_populate_search_index_wikipedia()
+ 
     print("Completed successfully")

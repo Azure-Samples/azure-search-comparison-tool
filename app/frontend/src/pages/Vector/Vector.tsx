@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { Checkbox, DefaultButton, MessageBar, MessageBarType, Panel, Spinner, Stack, TextField, Toggle } from "@fluentui/react";
+import { Checkbox, DefaultButton, Dropdown, IDropdownOption, MessageBar, MessageBarType, Panel, Spinner, Stack, TextField, Toggle } from "@fluentui/react";
 import { DismissCircle24Filled, Search24Regular, Settings20Regular } from "@fluentui/react-icons";
 
 import styles from "./Vector.module.css";
@@ -25,6 +25,7 @@ const Vector: React.FC = () => {
     const [efSearchInSchema, setEfSearchInSchema] = React.useState<string>("");
     const [efSearch, setEfSearch] = React.useState<string>("");
     const [validationError, setValidationError] = React.useState<string>("");
+    const [selectedDatasetKey, setSelectedDatasetKey] = React.useState<string>("sample");
 
     const approaches: Approach[] = useMemo(
         () => [
@@ -35,6 +36,21 @@ const Vector: React.FC = () => {
         ],
         []
     );
+
+    const Datasets: IDropdownOption[] = useMemo(
+        () => [
+            { key: "sample", text: "Text-sample", title: "Sample text data" },
+            { key: "wikipedia", text: "Wikipedia-articles", title: "Wikipedia articles data" }
+        ],
+        []
+    );
+
+    let sampleQueries: string[] = [];
+    if (selectedDatasetKey === "sample") {
+        sampleQueries = ["tools for software development", "herramientas para el desarrollo de software", "scalable storage solution"];
+    } else if (selectedDatasetKey === "wikipedia") {
+        sampleQueries = ["species of tigers", "world history", "global delicious food"];
+    }
 
     useEffect(() => {
         if (searchQuery === "") {
@@ -100,7 +116,7 @@ const Vector: React.FC = () => {
 
             Promise.allSettled(
                 searchApproachKeys.map(async approachKey => {
-                    const results = await getTextSearchResults(approachKey, query, useSemanticCaptions, queryVector);
+                    const results = await getTextSearchResults(approachKey, query, useSemanticCaptions, selectedDatasetKey, queryVector);
                     const searchResults = results.results;
                     const resultCard: ResultCard = {
                         approachKey,
@@ -126,7 +142,7 @@ const Vector: React.FC = () => {
                     setLoading(false);
                 });
         },
-        [selectedApproachKeys, efSearch, efSearchInSchema, useSemanticCaptions]
+        [selectedApproachKeys, efSearch, efSearchInSchema, useSemanticCaptions, selectedDatasetKey]
     );
 
     const handleOnKeyDown = useCallback(
@@ -176,8 +192,13 @@ const Vector: React.FC = () => {
         [efSearchInSchema]
     );
 
+    const onDatasetChange = React.useCallback((_event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption): void => {
+        setSelectedDatasetKey(String(item?.key) ?? "sample");
+    }, []);
+
     return (
         <div className={styles.vectorContainer}>
+            <p className={styles.approach}>Dataset: {Datasets.find(d => d.key === selectedDatasetKey)?.text}</p>
             <Stack horizontal className={styles.questionInputContainer}>
                 <Search24Regular />
                 <TextField
@@ -203,9 +224,9 @@ const Vector: React.FC = () => {
                     ))}
                 {resultCards.length === 0 && !loading ? (
                     <div className={styles.sampleCardsContainer}>
-                        <SampleCard query="tools for software development" onClick={handleSampleCardClick} />
-                        <SampleCard query="herramientas para el desarrollo de software" onClick={handleSampleCardClick} />
-                        <SampleCard query="scalable storage solution" onClick={handleSampleCardClick} />
+                        {sampleQueries.map(query => (
+                            <SampleCard key={query} query={query} onClick={handleSampleCardClick} />
+                        ))}
                     </div>
                 ) : (
                     <>
@@ -220,7 +241,12 @@ const Vector: React.FC = () => {
                                                 <Stack horizontal horizontalAlign="space-between">
                                                     <div className={styles.titleContainer}>
                                                         <p className={styles.searchResultCardTitle}>{result.title} </p>
-                                                        <p className={styles.category}>{result.category}</p>
+                                                        {selectedDatasetKey === "sample" && <p className={styles.category}>{result.category}</p>}
+                                                        {selectedDatasetKey === "wikipedia" && (
+                                                            <a href={result.url} target="_blank" rel="noreferrer">
+                                                                {result.url && decodeURIComponent(result.url).slice(result.url?.lastIndexOf("/") + 1)}
+                                                            </a>
+                                                        )}
                                                     </div>
                                                     {!hideScores && (
                                                         <div className={styles.scoreContainer}>
@@ -295,6 +321,7 @@ const Vector: React.FC = () => {
                     </div>
                 ))}
                 <TextField className={styles.efSearch} label="efSearch" value={efSearch} onChange={onEfSearchChanged} errorMessage={validationError} />
+                <Dropdown label="Dataset" selectedKey={selectedDatasetKey} onChange={onDatasetChange} options={Datasets} />
                 {textQueryVector && (
                     <>
                         <p>Embedding model name:</p>

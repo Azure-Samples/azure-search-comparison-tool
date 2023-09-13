@@ -18,6 +18,7 @@ class SearchText:
         k: int | None = None,
         filter: str | None = None,
         query_vector: list[float] | None = None,
+        data_set: str = "sample"
     ):
         # Vectorize query
         query_vector = query_vector if use_vector_search else None
@@ -79,19 +80,36 @@ class SearchText:
                 if r["@search.captions"]
                 else None
             )
-            results.append(
-                {
-                    "@search.score": r["@search.score"],
-                    "@search.reranker_score": r["@search.reranker_score"],
-                    "@search.captions": captions,
-                    "id": r["id"],
-                    "title": r["title"],
-                    "titleVector": r["titleVector"],
-                    "content": r["content"],
-                    "contentVector": r["contentVector"],
-                    "category": r["category"],
-                }
-            )
+
+            if data_set == "sample":
+                results.append(
+                    {
+                        "@search.score": r["@search.score"],
+                        "@search.reranker_score": r["@search.reranker_score"],
+                        "@search.captions": captions,
+                        "id": r["id"],
+                        "title": r["title"],
+                        "titleVector": r["titleVector"],
+                        "content": r["content"],
+                        "contentVector": r["contentVector"],
+                        "category": r["category"],
+                    }
+                )
+            elif data_set == "wikipedia":
+                results.append(
+                    {
+                        "@search.score": r["@search.score"],
+                        "@search.reranker_score": r["@search.reranker_score"],
+                        "@search.captions": captions,
+                        "vector_id": r["vector_id"],
+                        "id": r["id"],
+                        "title": r["title"],
+                        "content": r["text"],
+                        "url": r["url"],
+                        "titleVector": r["titleVector"],
+                        "contentVector": r["contentVector"],
+                    }
+                )
 
         return {
             "results": results,
