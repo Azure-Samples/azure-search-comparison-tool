@@ -5,6 +5,7 @@ export const getTextSearchResults = async (
     approach: "text" | "vec" | "hs" | "hssr" | undefined,
     searchQuery: string,
     useSemanticCaptions: boolean,
+    dataSet?: string,
     queryVector?: number[],
     select?: string,
     k?: number
@@ -13,7 +14,8 @@ export const getTextSearchResults = async (
         query: searchQuery,
         select: select,
         vectorSearch: false,
-        hybridSearch: false
+        hybridSearch: false,
+        dataSet: dataSet
     };
 
     if (approach === "vec" || approach === "hs" || approach === "hssr") {

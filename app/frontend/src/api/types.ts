@@ -15,6 +15,7 @@ export interface TextSearchRequest {
     useSemanticRanker?: boolean;
     useSemanticCaptions?: boolean;
     queryVector?: number[];
+    dataSet?: string;
 }
 
 export interface ImageSearchRequest {
@@ -42,7 +43,8 @@ export interface TextSearchResult extends SearchResult {
     titleVector: number[];
     content: string;
     contentVector: number[];
-    category: string;
+    category?: string;
+    url?: string;
 }
 
 export interface ImageSearchResult extends SearchResult {

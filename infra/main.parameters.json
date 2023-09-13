@@ -44,6 +44,9 @@
     "searchImageIndexName": {
       "value": "${AZURE_SEARCH_IMAGE_INDEX=vectorimageindex}"
     },
+    "searchWikipediaIndexName": {
+      "value": "${AZURE_SEARCH_WIKIPEDIA_INDEX=vectorwikipediaindex}"
+    },
     "storageAccountName": {
       "value": "${AZURE_STORAGE_ACCOUNT}"
     },

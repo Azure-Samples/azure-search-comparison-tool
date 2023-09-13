@@ -25,7 +25,7 @@ const Vector: React.FC = () => {
     const [efSearchInSchema, setEfSearchInSchema] = React.useState<string>("");
     const [efSearch, setEfSearch] = React.useState<string>("");
     const [validationError, setValidationError] = React.useState<string>("");
-    const [selectedDatasetKey, setSelectedDatasetKey] = React.useState<string | number>("sample");
+    const [selectedDatasetKey, setSelectedDatasetKey] = React.useState<string>("sample");
 
     const approaches: Approach[] = useMemo(
         () => [
@@ -39,11 +39,18 @@ const Vector: React.FC = () => {
 
     const Datasets: IDropdownOption[] = useMemo(
         () => [
-            { key: "sample", text: "Text-sample", title: "This is the current default dataset" },
-            { key: "sample2", text: "Text-sample2", title: "This is the new dataset" }
+            { key: "sample", text: "Text-sample", title: "Sample text data" },
+            { key: "wikipedia", text: "Wikipedia-articles", title: "Wikipedia articles data" }
         ],
         []
     );
+
+    let sampleQueries: string[] = [];
+    if (selectedDatasetKey === "sample") {
+        sampleQueries = ["tools for software development", "herramientas para el desarrollo de software", "scalable storage solution"];
+    } else if (selectedDatasetKey === "wikipedia") {
+        sampleQueries = ["species of tigers", "world history", "global delicious food"];
+    }
 
     useEffect(() => {
         if (searchQuery === "") {
@@ -109,7 +116,7 @@ const Vector: React.FC = () => {
 
             Promise.allSettled(
                 searchApproachKeys.map(async approachKey => {
-                    const results = await getTextSearchResults(approachKey, query, useSemanticCaptions, queryVector);
+                    const results = await getTextSearchResults(approachKey, query, useSemanticCaptions, selectedDatasetKey, queryVector);
                     const searchResults = results.results;
                     const resultCard: ResultCard = {
                         approachKey,
@@ -135,7 +142,7 @@ const Vector: React.FC = () => {
                     setLoading(false);
                 });
         },
-        [selectedApproachKeys, efSearch, efSearchInSchema, useSemanticCaptions]
+        [selectedApproachKeys, efSearch, efSearchInSchema, useSemanticCaptions, selectedDatasetKey]
     );
 
     const handleOnKeyDown = useCallback(
@@ -186,7 +193,7 @@ const Vector: React.FC = () => {
     );
 
     const onDatasetChange = React.useCallback((_event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption): void => {
-        setSelectedDatasetKey(item?.key ?? "sample");
+        setSelectedDatasetKey(String(item?.key) ?? "sample");
     }, []);
 
     return (
@@ -217,9 +224,9 @@ const Vector: React.FC = () => {
                     ))}
                 {resultCards.length === 0 && !loading ? (
                     <div className={styles.sampleCardsContainer}>
-                        <SampleCard query="tools for software development" onClick={handleSampleCardClick} />
-                        <SampleCard query="herramientas para el desarrollo de software" onClick={handleSampleCardClick} />
-                        <SampleCard query="scalable storage solution" onClick={handleSampleCardClick} />
+                        {sampleQueries.map(query => (
+                            <SampleCard key={query} query={query} onClick={handleSampleCardClick} />
+                        ))}
                     </div>
                 ) : (
                     <>
@@ -234,7 +241,12 @@ const Vector: React.FC = () => {
                                                 <Stack horizontal horizontalAlign="space-between">
                                                     <div className={styles.titleContainer}>
                                                         <p className={styles.searchResultCardTitle}>{result.title} </p>
-                                                        <p className={styles.category}>{result.category}</p>
+                                                        {selectedDatasetKey === "sample" && <p className={styles.category}>{result.category}</p>}
+                                                        {selectedDatasetKey === "wikipedia" && (
+                                                            <a href={result.url} target="_blank" rel="noreferrer">
+                                                                {result.url && decodeURIComponent(result.url).slice(result.url?.lastIndexOf("/") + 1)}
+                                                            </a>
+                                                        )}
                                                     </div>
                                                     {!hideScores && (
                                                         <div className={styles.scoreContainer}>
