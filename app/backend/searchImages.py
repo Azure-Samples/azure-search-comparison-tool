@@ -1,6 +1,7 @@
-import logging
+
 import aiohttp
 from azure.search.documents.aio import SearchClient
+import base64
 
 
 class SearchImages:
@@ -16,8 +17,17 @@ class SearchImages:
         self.visionAi_api_version = visionAi_api_version
         self.visionAi_key = visionAi_key
 
-    async def search(self, search_text: str):
-        query_vector = await self.embed_query(search_text)
+    async def search(self, query: str, dataType: str):
+        match dataType:
+            case "text":
+                query_vector = await self.embed_query_text(query)
+                search_text = query
+            case "imageFile":
+                query_vector = await self.embed_query_imageFile(query)
+                search_text = None
+            case "imageUrl":
+                query_vector = await self.embed_query_imageUrl(query)
+                search_text = None
 
         search_results = await self.search_client.search(
             search_text,
@@ -55,7 +65,7 @@ class SearchImages:
             "queryVector": query_vector,
         }
 
-    async def embed_query(self, query: str):
+    async def embed_query_text(self, query: str):
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 f"{self.visionAi_endpoint}computervision/retrieval:vectorizeText?api-version={self.visionAi_api_version}",
@@ -64,6 +74,42 @@ class SearchImages:
                     "Ocp-Apim-Subscription-Key": self.visionAi_key,
                 },
                 json={"text": query},
+            ) as response:
+                response_json = await response.json()
+
+                if response.status != 200:
+                    raise Exception(response_json)
+
+                return response_json["vector"]
+            
+    async def embed_query_imageFile(self, query: str):
+        binaryData = base64.b64decode(query.split(",")[1])
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                f"{self.visionAi_endpoint}computervision/retrieval:vectorizeImage?overload=stream&api-version={self.visionAi_api_version}",
+                headers={
+                    "Content-Type": "application/octet-stream",
+                    "Ocp-Apim-Subscription-Key": self.visionAi_key,
+                },
+                data=binaryData,
+            ) as response:
+                response_json = await response.json()
+
+                if response.status != 200:
+                    raise Exception(response_json)
+
+                return response_json["vector"]
+
+
+    async def embed_query_imageUrl(self, query: str):
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                f"{self.visionAi_endpoint}computervision/retrieval:vectorizeImage?api-version={self.visionAi_api_version}",
+                headers={
+                    "Content-Type": "application/json",
+                    "Ocp-Apim-Subscription-Key": self.visionAi_key,
+                },
+                json={"url": query},
             ) as response:
                 response_json = await response.json()
 

@@ -56,6 +56,21 @@
     object-fit: cover;
 }
 
+.dropZone {
+    border: dashed 2px black;
+    height: 15rem;
+}
+
+.fileInput {
+    display: none;
+    width: 100%;
+}
+
+.fileInputLabel {
+    display: block;
+    width: 50%;
+}
+
 /* For extra-wide screens (e.g., large monitors) */
 @media screen and (min-width: 1440px) {
     .searchResultsContainer {

@@ -108,7 +108,8 @@ async def search_images():
     try:
         request_json = await request.get_json()
         r = await current_app.config[CONFIG_SEARCH_IMAGES_INDEX].search(
-            request_json["query"]
+            request_json["query"],
+            request_json["dataType"]
         )
 
         return jsonify(r), 200
