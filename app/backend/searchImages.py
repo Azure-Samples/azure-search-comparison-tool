@@ -32,7 +32,7 @@ class SearchImages:
         search_results = await self.search_client.search(
             search_text,
             vector=query_vector,
-            top_k=3,
+            top_k=8,
             vector_fields="imageVector",
             select=["id,title,imageUrl"],
         )
