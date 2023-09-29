@@ -1,4 +1,3 @@
-
 import aiohttp
 from azure.search.documents.aio import SearchClient
 import base64

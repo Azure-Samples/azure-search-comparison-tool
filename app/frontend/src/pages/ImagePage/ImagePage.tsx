@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from "react";
-import { Spinner, Stack, TextField, Text, IIconProps, CommandButton, MessageBar, MessageBarType } from "@fluentui/react";
-import { DismissCircle24Filled, ImageAdd24Regular, ImageSearch24Regular, Search24Regular } from "@fluentui/react-icons";
+import React, { useState, useCallback, useMemo } from "react";
+import { Spinner, Stack, TextField, Text, MessageBar, MessageBarType } from "@fluentui/react";
+import { DismissCircle24Filled, ImageAdd24Regular, ImageSearch24Regular } from "@fluentui/react-icons";
 
 import styles from "./ImagePage.module.css";
 
@@ -11,50 +11,25 @@ export const ImagePage = () => {
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
     const [searchResults, setSearchResults] = useState<ImageSearchResult[]>([]);
-    const [isImageSearch, setIsImageSearch] = React.useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = React.useState<string>("");
-    const [textValue, setTextValue] = React.useState("");
 
-    const handleOnKeyDown = useCallback(
-        async (e: React.KeyboardEvent<HTMLInputElement>) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                if (searchQuery.length === 0) {
-                    setSearchResults([]);
-                    setErrorMessage("");
-                    return;
-                }
+    const onTextSearch = useCallback(async (searchQuery: string) => {
+        setSearchResults([]);
+        setErrorMessage("");
+        setSelectedImage("");
 
-                setLoading(true);
-                const results = await getImageSearchResults(searchQuery, "text");
+        setLoading(true);
+        const results = await getImageSearchResults(searchQuery, "text");
 
-                setSearchResults(results.results);
-                setLoading(false);
-            }
-        },
-        [searchQuery]
-    );
-
-    const handleOnChange = useCallback((_ev: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newValue?: string) => {
-        setSearchQuery(newValue ?? "");
+        setSearchResults(results.results);
+        setLoading(false);
     }, []);
 
-    const reader = new FileReader();
+    const onImageUrl = useCallback(async (query: string, dataType: string) => {
+        setSearchResults([]);
+        setErrorMessage("");
 
-    const onFileSelected = (file: File) => {
-        reader.onload = async () => {
-            const imageData = reader.result as string;
-            setSelectedImage(imageData);
-            setLoading(true);
-            const results = await getImageSearchResults(imageData, "imageFile");
-            setSearchResults(results.results);
-            setLoading(false);
-        };
-        reader.readAsDataURL(file);
-    };
-
-    const onImageUrlPasted = async (query: string, dataType: string) => {
         setSelectedImage(query);
         setLoading(true);
         try {
@@ -66,20 +41,82 @@ export const ImagePage = () => {
             );
         }
         setLoading(false);
-    };
-    const cancelIcon: IIconProps = { iconName: "Cancel" };
+    }, []);
 
-    const onDrop: React.DragEventHandler = e => {
-        e.preventDefault();
+    const isValidFileType = useCallback((type: string) => {
+        if (type.split("/")[0] === "image") {
+            return true;
+        }
+        return false;
+    }, []);
+
+    const isValidHttpUrl = useCallback((s: string) => {
+        let url;
+        try {
+            url = new URL(s);
+        } catch {
+            return false;
+        }
+        return url.protocol === "http:" || url.protocol === "https:";
+    }, []);
+
+    const handleOnKeyDown = useCallback(
+        (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (searchQuery.length === 0) {
+                    setSearchResults([]);
+                    setErrorMessage("");
+                    return;
+                }
+
+                if (isValidHttpUrl(searchQuery)) {
+                    void onImageUrl(searchQuery, "imageUrl");
+                } else {
+                    void onTextSearch(searchQuery);
+                }
+            }
+        },
+        [isValidHttpUrl, onImageUrl, onTextSearch, searchQuery]
+    );
+
+    const handleOnChange = useCallback((_ev: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newValue?: string) => {
+        setSearchQuery(newValue ?? "");
+    }, []);
+
+    const reader = useMemo(() => new FileReader(), []);
+
+    const onFileSelected = useCallback(
+        (file: File) => {
+            reader.onload = async () => {
+                const imageData = String(reader.result);
+                setSelectedImage(imageData);
+                setLoading(true);
+                const results = await getImageSearchResults(imageData, "imageFile");
+                setSearchResults(results.results);
+                setLoading(false);
+            };
+            reader.readAsDataURL(file);
+        },
+        [reader]
+    );
+
+    const handleFile = (item: File) => {
         setSearchResults([]);
         setErrorMessage("");
         setSelectedImage("");
-
-        console.log("ett", e);
-        const item = e.dataTransfer?.files?.[0];
-        if (item && item.type.startsWith("image")) {
+        setSearchQuery("");
+        if (isValidFileType(item.type)) {
             onFileSelected(item);
+        } else {
+            setErrorMessage("The file type is not supported.");
         }
+    };
+
+    const onDrop: React.DragEventHandler = e => {
+        e.preventDefault();
+        const item = e.dataTransfer?.files?.[0];
+        item && handleFile(item);
     };
 
     const onDragOver: React.DragEventHandler = e => {
@@ -92,27 +129,28 @@ export const ImagePage = () => {
         setSearchResults([]);
         setErrorMessage("");
         setSelectedImage("");
-
+        setSearchQuery("");
         const item = e.clipboardData?.items?.[0];
-        console.log("item", item);
-        if (item && item.kind === "file" && item.type.startsWith("image")) {
+        if (item && item.kind === "file") {
             const f = item.getAsFile();
-            if (f) {
-                onFileSelected(f);
-            }
+            f && handleFile(f);
         } else if (item && item.kind === "string") {
             if (item.type === "text/html") {
                 item.getAsString(htmlString => {
                     const tempContainer = document.createElement("div");
                     tempContainer.innerHTML = htmlString;
                     const imgElements = tempContainer.getElementsByTagName("img");
-                    void onImageUrlPasted(imgElements[0].src, "imageUrl");
+                    void onImageUrl(imgElements[0].src, "imageUrl");
                     tempContainer.remove();
                 });
             } else if (item.type === "text/plain") {
                 item.getAsString(urlString => {
-                    void onImageUrlPasted(urlString, "imageUrl");
-                    setTextValue(urlString || "");
+                    setSearchQuery(urlString || "");
+                    if (isValidHttpUrl(urlString)) {
+                        void onImageUrl(urlString, "imageUrl");
+                    } else {
+                        void onTextSearch(urlString);
+                    }
                 });
             }
         }
@@ -120,24 +158,16 @@ export const ImagePage = () => {
 
     const onFileInput: React.ChangeEventHandler<HTMLInputElement> = e => {
         e.preventDefault();
-        setSearchResults([]);
-        setErrorMessage("");
-        setSelectedImage("");
-
-        e.target.files?.[0].type.startsWith("image") && onFileSelected(e.target.files[0]);
+        const item = e.target.files?.[0];
+        item && handleFile(item);
     };
 
-    // const onTextInput: React.ChangeEventHandler<HTMLInputElement> = e => {
-    //     if (!e.target.value.startsWith("http")) {
-    //         setErrorMessage(`Invalid image URL`);
-    //     }
-    // };
     return (
         <div className={styles.vectorContainer}>
-            {isImageSearch ? (
+            {
                 <Stack horizontal horizontalAlign="center" tokens={{ childrenGap: 50 }}>
-                    <label htmlFor="file-upload" className={styles.fileInputLabel}>
-                        <Stack horizontal horizontalAlign="end" className={styles.dropZone}>
+                    <div className={styles.dropZone}>
+                        <Stack horizontal horizontalAlign="center" className={styles.dropZoneContent}>
                             <Stack
                                 className={styles.imageInput}
                                 tokens={{ childrenGap: 10 }}
@@ -146,62 +176,41 @@ export const ImagePage = () => {
                                 onDragOver={onDragOver}
                                 onDrop={onDrop}
                             >
-                                <input className={styles.fileInput} type="file" id="file-upload" onChange={onFileInput} />
-                                <ImageAdd24Regular />
-                                <Text variant="large" className={styles.text}>
-                                    {"Click to upload an image or drag an image here"}
-                                </Text>
-                                <h6>------OR------</h6>
-                                <TextField
-                                    className={styles.imagePaste}
-                                    type="text"
-                                    onPaste={onPaste}
-                                    // onChange={onTextInput}
-                                    value={textValue}
-                                    placeholder="Paste an image or an image URL here"
-                                />
+                                <Stack horizontal className={styles.questionInputContainer} horizontalAlign="center">
+                                    <ImageSearch24Regular />
+                                    <TextField
+                                        className={styles.questionInputTextArea}
+                                        resizable={false}
+                                        borderless
+                                        onPaste={onPaste}
+                                        value={searchQuery}
+                                        placeholder="Type something here (e.g. fancy shoes) or paste image or URL here"
+                                        onChange={handleOnChange}
+                                        onKeyDown={handleOnKeyDown}
+                                    />
+                                    {searchQuery.length > 0 && <DismissCircle24Filled onClick={() => setSearchQuery("")} />}
+                                </Stack>
+                                <label htmlFor="file-upload" className={styles.uploadContainer}>
+                                    <Stack>
+                                        <Text>------OR------</Text>
+                                        <input className={styles.fileInput} type="file" id="file-upload" onChange={onFileInput} />
+                                        <ImageAdd24Regular className={styles.uploadButton} />
+                                        <Text variant="large" className={styles.text}>
+                                            {"Click to upload or drag an image here"}
+                                        </Text>
+                                    </Stack>
+                                </label>
                             </Stack>
-                            <CommandButton
-                                iconProps={cancelIcon}
-                                onClick={() => {
-                                    setIsImageSearch(false);
-                                    setSelectedImage("");
-                                    setSearchResults([]);
-                                    setErrorMessage("");
-                                }}
-                            />
                         </Stack>
-                    </label>
+                    </div>
 
-                    {selectedImage && (
+                    {!errorMessage && selectedImage && (
                         <div className={styles.selectedImageContainer}>
                             <img src={selectedImage} alt="Selected" className={styles.selectedImage} />
                         </div>
                     )}
                 </Stack>
-            ) : (
-                <Stack horizontal className={styles.questionInputContainer}>
-                    <Search24Regular />
-                    <TextField
-                        className={styles.questionInputTextArea}
-                        resizable={false}
-                        borderless
-                        value={searchQuery}
-                        placeholder="Type something here (e.g. fancy shoes)"
-                        onChange={handleOnChange}
-                        onKeyDown={handleOnKeyDown}
-                    />
-                    <ImageSearch24Regular
-                        onClick={() => {
-                            setIsImageSearch(true);
-                            setSearchQuery("");
-                            setSearchResults([]);
-                            setErrorMessage("");
-                        }}
-                    />
-                    {searchQuery.length > 0 && <DismissCircle24Filled onClick={() => setSearchQuery("")} />}
-                </Stack>
-            )}
+            }
 
             <div className={styles.spinner}>{loading && <Spinner label="Getting results" />}</div>
             {errorMessage && <MessageBar messageBarType={MessageBarType.error}>{errorMessage}</MessageBar>}
