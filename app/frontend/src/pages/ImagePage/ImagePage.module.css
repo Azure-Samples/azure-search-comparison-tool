@@ -38,7 +38,7 @@
         0px 8px 16px rgba(0, 0, 0, 0.14),
         0px 0px 2px rgba(0, 0, 0, 0.12);
     padding: 10px;
-    height: 15rem;
+    height: 20rem;
     flex: 1;
     background: white;
     display: flex;
@@ -54,6 +54,53 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.fileInput {
+    display: none;
+    width: 100%;
+}
+
+.dropZone {
+    display: flex;
+    border: dashed 2px black;
+    height: 100%;
+    width: 50%;
+}
+
+.dropZoneContent {
+    width: 100%;
+}
+
+.selectedImageContainer {
+    width: auto;
+    height: 14rem;
+}
+
+.selectedImage {
+    width: auto;
+    height: 100%;
+}
+
+.imageInput {
+    display: flex;
+    flex-direction: column;
+    margin: 1rem 1rem;
+    width: 100%;
+}
+
+.text {
+    margin-bottom: 15px;
+}
+
+.uploadContainer {
+    width: 100%;
+    text-align: center;
+}
+
+.uploadButton {
+    margin: 20px;
+    align-self: center;
 }
 
 /* For extra-wide screens (e.g., large monitors) */

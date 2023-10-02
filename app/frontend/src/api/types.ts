@@ -20,6 +20,7 @@ export interface TextSearchRequest {
 
 export interface ImageSearchRequest {
     query: string;
+    dataType: string;
 }
 
 export interface SearchResponse<T extends SearchResult> {
