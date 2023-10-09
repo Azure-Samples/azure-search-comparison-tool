@@ -4,6 +4,10 @@
     margin: 1rem 4rem;
 }
 
+.searchZone {
+    width: 50%;
+}
+
 .questionInputContainer {
     border-radius: 0.375rem;
     box-shadow:
@@ -62,10 +66,7 @@
 }
 
 .dropZone {
-    display: flex;
-    border: dashed 2px black;
-    height: 100%;
-    width: 50%;
+    width: 100%;
 }
 
 .dropZoneContent {
@@ -96,6 +97,7 @@
 .uploadContainer {
     width: 100%;
     text-align: center;
+    border: dashed 2px black;
 }
 
 .uploadButton {
