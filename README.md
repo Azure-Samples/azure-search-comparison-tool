@@ -1,19 +1,19 @@
 # Azure Search Comparison Tool
 
-This repository contains a React application that demonstrates the Azure Search Comparison Tool. This tool provides a web interface for visualizing different retrieval modes available in Azure AI Search. Additionally, the tool supports image search using text-to-image and image-to-image search functionalities. It leverages OpenAI for text embeddings and Azure AI Vision API for image embeddings.
+This repository contains a React application that demonstrates the Azure Search Comparison Tool. This tool provides a web interface for visualizing different retrieval modes available in Azure Cognitive Search. Additionally, the tool supports image search using text-to-image and image-to-image search functionalities. It leverages OpenAI for text embeddings and Azure AI Vision API for image embeddings.
 
 You can find a live demo at [aks.ms/VectorSearchDemo](https://app-backend-eypgput7faetw.azurewebsites.net/)
 
 ## Features
 
-- Generate text embeddings using Azure OpenAI and insert them into a vector store in Azure AI Search.
+- Generate text embeddings using Azure OpenAI and insert them into a vector store in Azure Cognitive Search.
 - Perform vector search queries on text data, including vector searches with metadata filtering and hybrid (text + vectors) search.
 - Generate image embeddings using Azure AI Vision API.
 - Perform text-to-image and image-to-image vector searches.
 
 ## Prerequisites
 
-- An Azure subscription with access to Azure AI Search and Azure AI Services.
+- An Azure subscription with access to Azure Cognitive Search and Azure AI Services.
 - Access to Azure OpenAI for generating text embeddings.
 - Access to Azure AI Vision for generating image embeddings.
 
@@ -103,5 +103,5 @@ Happy searching!
 ## References
 
 - [Azure Cognitive Search Documentation](https://learn.microsoft.com/azure/search/)
-- [Azure OpenAI Documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/)
+- [Azure OpenAI Documentation](https://learn.microsoft.com/azure/ai-services/openai/)
 - [Azure AI Vision Documentation](https://learn.microsoft.com/azure/ai-services/computer-vision/)
