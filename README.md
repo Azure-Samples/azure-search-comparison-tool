@@ -1,17 +1,15 @@
-# Vector Search Demo with Azure Cognitive Search
+# Azure Search Comparison Tool
 
-This repository contains a React application that showcases a Vector Search Demo using Azure Cognitive Search. The demo leverages OpenAI for text embeddings and Azure AI Vision API for image embeddings.
+This repository contains a React application that demonstrates the Azure Search Comparison Tool. This tool provides a web interface for visualizing different retrieval modes available in Azure Cognitive Search. Additionally, the tool supports image search using text-to-image and image-to-image search functionalities. It leverages OpenAI for text embeddings and Azure AI Vision API for image embeddings.
 
 You can find a live demo at [aks.ms/VectorSearchDemo](https://app-backend-eypgput7faetw.azurewebsites.net/)
 
-![Vector Search Video](public/VectorSearchDemo.gif?raw=true)
-
 ## Features
 
-- Generate text embeddings using OpenAI and insert them into a vector store in Azure Cognitive Search.
+- Generate text embeddings using Azure OpenAI and insert them into a vector store in Azure Cognitive Search.
 - Perform vector search queries on text data, including vector searches with metadata filtering and hybrid (text + vectors) search.
 - Generate image embeddings using Azure AI Vision API.
-- Perform vector searches from text to images and image to images (coming soon)
+- Perform text-to-image and image-to-image vector searches.
 
 ## Prerequisites
 
@@ -91,19 +89,19 @@ In a second terminal run the frontend:
 - In Azure: navigate to the Azure WebApp deployed by azd. The URL is printed out when azd completes (as "Endpoint"), or you can find it in the Azure portal.
 - Running locally: navigate to 127.0.0.1:50505
 
-1. The Vector Search Demo allows you to search for text queries by entering them in the search bar and pressing 'Enter'. The application will generate text embeddings using Azure OpenAI and perform vector searches on the data stored in Azure Cognitive Search.
+1. The Azure Search Comparison Tool allows you to search for text queries by entering them in the search bar and pressing 'Enter'. The application will generate text embeddings using Azure OpenAI and perform vector searches on the data stored in Azure Cognitive Search.
 
 1. The search results will be displayed as cards. Feel free to click on the settings icon to explore the different query approaches such as Hybrid Search and Hybrid Search with Semantic Ranking, Captions, and Highlights powered by Microsoft Bing. Note that you will need to enroll in a Semantic Plan in your Azure Cognitive Search service to use this feature. See [Semantic search](https://learn.microsoft.com/azure/search/semantic-search-overview).
 
 ## Conclusion
 
-I hope you find this repository useful for demoing Vector search and exploring the different features Azure Cognitive Search has to offer. Feel free to explore and customize the code to meet your specific requirements.
-If you have any questions or suggestions, please feel free to open an issue and I'll be happy to help.
+We hope you find this repository useful for demoing Vector search and exploring the different features Azure Cognitive Search has to offer. Feel free to explore and customize the code to meet your specific requirements.  
+If you have any questions or suggestions, please feel free to open an issue and we'll be happy to help.
 
 Happy searching!
 
 ## References
 
 - [Azure Cognitive Search Documentation](https://learn.microsoft.com/azure/search/)
-- [Azure OpenAI Documentation](https://learn.microsoft.com/azure/cognitive-services/openai/)
+- [Azure OpenAI Documentation](https://learn.microsoft.com/azure/ai-services/openai/)
 - [Azure AI Vision Documentation](https://learn.microsoft.com/azure/ai-services/computer-vision/)
