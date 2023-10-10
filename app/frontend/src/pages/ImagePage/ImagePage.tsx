@@ -166,7 +166,7 @@ export const ImagePage = () => {
         <div className={styles.vectorContainer}>
             {
                 <Stack horizontal horizontalAlign="center" tokens={{ childrenGap: 50 }}>
-                    <div className={styles.dropZone}>
+                    <div className={styles.searchZone}>
                         <Stack horizontal horizontalAlign="center" className={styles.dropZoneContent}>
                             <Stack
                                 className={styles.imageInput}
@@ -190,9 +190,9 @@ export const ImagePage = () => {
                                     />
                                     {searchQuery.length > 0 && <DismissCircle24Filled onClick={() => setSearchQuery("")} />}
                                 </Stack>
+                                <Text>OR</Text>
                                 <label htmlFor="file-upload" className={styles.uploadContainer}>
-                                    <Stack>
-                                        <Text>------OR------</Text>
+                                    <Stack className={styles.dropZone} verticalAlign="center">
                                         <input className={styles.fileInput} type="file" id="file-upload" onChange={onFileInput} />
                                         <ImageAdd24Regular className={styles.uploadButton} />
                                         <Text variant="large" className={styles.text}>
