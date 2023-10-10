@@ -2,7 +2,7 @@
 
 This repository contains a React application that demonstrates the Azure Search Comparison Tool. This tool provides a web interface for visualizing different retrieval modes available in Azure Cognitive Search. Additionally, the tool supports image search using text-to-image and image-to-image search functionalities. It leverages OpenAI for text embeddings and Azure AI Vision API for image embeddings.
 
-You can find a live demo at [aks.ms/VectorSearchDemo](https://app-backend-eypgput7faetw.azurewebsites.net/)
+You can find a live demo at [aka.ms/VectorSearchDemo](https://aka.ms/VectorSearchDemo/)
 
 ![Vector Search Video](https://github.com/Azure-Samples/azure-search-comparison-tool/blob/main/public/VectorGIF.gif)
 
