@@ -39,8 +39,8 @@ const Vector: React.FC = () => {
 
     const Datasets: IDropdownOption[] = useMemo(
         () => [
-            { key: "sample", text: "Text-sample", title: "Sample text data" },
-            { key: "wikipedia", text: "Wikipedia-articles", title: "Wikipedia articles data" }
+            { key: "sample", text: "Azure Services", title: "Sample text data" },
+            { key: "wikipedia", text: "Wikipedia Articles", title: "Wikipedia articles data" }
         ],
         []
     );
