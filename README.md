@@ -4,6 +4,8 @@ This repository contains a React application that demonstrates the Azure Search 
 
 You can find a live demo at [aks.ms/VectorSearchDemo](https://app-backend-eypgput7faetw.azurewebsites.net/)
 
+![Vector Search Video](https://github.com/Azure-Samples/azure-search-comparison-tool/blob/main/public/VectorGIF.gif)
+
 ## Features
 
 - Generate text embeddings using Azure OpenAI and insert them into a vector store in Azure Cognitive Search.
