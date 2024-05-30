@@ -58,7 +58,7 @@ param createRoleForUser bool = true
 var abbrs = loadJsonContent('./abbreviations.json')
 
 // tags that should be applied to all resources.
-var tags = { 'azd-env-name': environmentName }
+var tags = { 'azd-env-name': environmentName, owner: 'nathan.smith@nhschoices.net', 'cost code': 'P0840/01', 'created date': '30/05/2024', 'product owner': 'Lousie Cleaver', 'requested by': 'Nathan Smith', 'service-product': 'nhsuk site search', team: 'PH-CC', 'created by': 'Nathan Smith', environment: 'dev'}
 
 // Generate a unique token to be used in naming resources.
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
