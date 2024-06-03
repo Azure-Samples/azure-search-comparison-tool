@@ -215,36 +215,47 @@ def populate_search_index_nhs_conditions():
     with open("data/conditions_1.json", "r", encoding="utf-8") as file:
         items = json.load(file)
 
-    treated_items = []
-
-    print(f"Generating Azure OpenAI embeddings...")
-    for item in items:
-
-        print(f"Vectorising {item["id"]}")
-
-        treated_item = {}
-        treated_item["id"] = item["id"]
-        treated_item["title"] = item["title"]
-        treated_item["titleVector"] = generate_vectors(item["title"])
-        treated_item["description"] = generate_vectors(item["description"])
-        treated_item["descriptionVector"] = generate_vectors(item["description"])
-
-        treated_items.append(treated_item)
-
-    print(f"Uploading items...")
     search_client = SearchClient(
         endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
         credential=azure_credential,
         index_name=AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME,
     )
 
-    batch_size = 100  
-    batches = [treated_items[i:i + batch_size] for i in range(0, len(treated_items), batch_size)]  
-  
-    for batch in batches:  
-        search_client.upload_documents(batch) 
+    batched_treated_items = []
+    batch_size = 4
+
+    for item in items[:11]:
+
+        print(f"Generating Azure OpenAI embeddings for {item["id"]} ...")
+
+        treated_item = {
+            "id": item["id"],
+            "title": item["title"],
+            "titleVector": generate_vectors(item["title"]),
+            "description": item["description"],
+            "descriptionVector": generate_vectors(item["description"])
+        }
+
+        batched_treated_items.append(treated_item)
+
+        search_client.upload_documents(documents=[treated_item])
+
+        if len(batched_treated_items) >= batch_size:
+
+            print(f"Uploading batch of {len(batched_treated_items)} items ...")
+
+            search_client.upload_documents(batched_treated_items)
+
+            batched_treated_items.clear()
+
+    if len(batched_treated_items) >= 0:
+
+        print(f"Uploading final batch of {len(batched_treated_items)} items ...")
+        search_client.upload_documents(batched_treated_items)
+
+
     print(
-        f"Uploaded {len(treated_items)} documents to index {AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME}"
+        f"Uploaded {len(items[:11])} documents to index {AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME}"
     )
 
 def delete_search_index(name: str):
