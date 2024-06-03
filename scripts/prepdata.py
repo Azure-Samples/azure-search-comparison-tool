@@ -11,7 +11,7 @@ import wget
 import pandas as pd
 # import zipfile
 
-import openai
+from openai import AzureOpenAI
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 # from azure.storage.blob import BlobServiceClient
 from azure.identity import DefaultAzureCredential
@@ -36,11 +36,6 @@ from azure.search.documents.indexes.models import (
 AZURE_OPENAI_SERVICE = os.environ.get("AZURE_OPENAI_SERVICE")
 AZURE_OPENAI_DEPLOYMENT_NAME = (
     os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME") or "embedding"
-)
-AZURE_VISIONAI_ENDPOINT = os.environ.get("AZURE_VISIONAI_ENDPOINT")
-AZURE_VISIONAI_KEY = os.environ.get("AZURE_VISIONAI_KEY")
-AZURE_VISIONAI_API_VERSION = (
-    os.environ.get("AZURE_VISIONAI_API_VERSION") or "2023-02-01-preview"
 )
 AZURE_SEARCH_SERVICE_ENDPOINT = os.environ.get("AZURE_SEARCH_SERVICE_ENDPOINT")
 AZURE_SEARCH_TEXT_INDEX_NAME = os.environ.get("AZURE_SEARCH_TEXT_INDEX_NAME")
@@ -140,8 +135,8 @@ def populate_search_index_text():
 
     print(f"Generating Azure OpenAI embeddings...")
     for item in input_data:
-        item["titleVector"] = generate_text_embeddings(item["title"])
-        item["contentVector"] = generate_text_embeddings(item["content"])
+        item["titleVector"] = generate_vectors(item["title"])
+        item["contentVector"] = generate_vectors(item["content"])
 
     print(f"Uploading documents...")
     search_client = SearchClient(
@@ -220,10 +215,21 @@ def populate_search_index_nhs_conditions():
     with open("data/conditions_1.json", "r", encoding="utf-8") as file:
         items = json.load(file)
 
+    treated_items = []
+
     print(f"Generating Azure OpenAI embeddings...")
     for item in items:
-        item["titleVector"] = generate_text_embeddings(item["title"])
-        item["descriptionVector"] = generate_text_embeddings(item["search_description"])
+
+        print(f"Vectorising {item["id"]}")
+
+        treated_item = {}
+        treated_item["id"] = item["id"]
+        treated_item["title"] = item["title"]
+        treated_item["titleVector"] = generate_vectors(item["title"])
+        treated_item["description"] = generate_vectors(item["description"])
+        treated_item["descriptionVector"] = generate_vectors(item["description"])
+
+        treated_items.append(treated_item)
 
     print(f"Uploading items...")
     search_client = SearchClient(
@@ -233,12 +239,12 @@ def populate_search_index_nhs_conditions():
     )
 
     batch_size = 100  
-    batches = [items[i:i + batch_size] for i in range(0, len(items), batch_size)]  
+    batches = [treated_items[i:i + batch_size] for i in range(0, len(treated_items), batch_size)]  
   
     for batch in batches:  
         search_client.upload_documents(batch) 
     print(
-        f"Uploaded {len(items)} documents to index {AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME}"
+        f"Uploaded {len(treated_items)} documents to index {AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME}"
     )
 
 def delete_search_index(name: str):
@@ -255,25 +261,20 @@ def before_retry_sleep(retry_state):
         "Rate limited on the Azure OpenAI embeddings API, sleeping before retrying..."
     )
 
-@retry(
-    wait=wait_random_exponential(min=1, max=60),
-    stop=stop_after_attempt(15),
-    before_sleep=before_retry_sleep,
-)
-def generate_text_embeddings(text):
-    refresh_openai_token()
-    response = openai.Embedding.create(input=text, engine=AZURE_OPENAI_DEPLOYMENT_NAME)
-    return response["data"][0]["embedding"]
+def generate_vectors(text):
 
+    client = AzureOpenAI(
+        api_key = get_openai_key(),  
+        api_version = "2024-02-01",
+        azure_endpoint = f"https://{AZURE_OPENAI_SERVICE}.openai.azure.com" 
+    )
 
-# refresh open ai token every 5 minutes
-def refresh_openai_token():
-    if open_ai_token_cache[CACHE_KEY_CREATED_TIME] + 300 < time.time():
-        token_cred = open_ai_token_cache[CACHE_KEY_TOKEN_CRED]
-        openai.api_key = token_cred.get_token(
-            "https://cognitiveservices.azure.com/.default"
-        ).token
-        open_ai_token_cache[CACHE_KEY_CREATED_TIME] = time.time()
+    response = client.embeddings.create(
+        input = text,
+        model = AZURE_OPENAI_DEPLOYMENT_NAME  # model = "deployment_name".
+    )
+
+    return response.data[0].embedding
 
 
 def generate_azuresearch_id():
@@ -282,6 +283,21 @@ def generate_azuresearch_id():
         first_char = random.choice(string.ascii_letters + string.digits)
         id = first_char + id[1:]
     return id
+
+def get_openai_key():
+
+    if (not CACHE_KEY_CREATED_TIME in open_ai_token_cache) or open_ai_token_cache[CACHE_KEY_CREATED_TIME] + 300 < time.time():
+
+        openai_token = azure_credential.get_token(
+            "https://cognitiveservices.azure.com/.default"
+        )
+
+        open_ai_token_cache[CACHE_KEY_CREATED_TIME] = time.time()
+        open_ai_token_cache[CACHE_KEY_TOKEN_CRED] = openai_token
+    else:
+        openai_token = open_ai_token_cache[CACHE_KEY_TOKEN_CRED]
+
+    return openai_token.token
 
 
 if __name__ == "__main__":
@@ -300,18 +316,6 @@ if __name__ == "__main__":
     azure_credential = DefaultAzureCredential(
         exclude_shared_token_cache_credential=True
     )
-
-    # Used by the OpenAI SDK
-    openai.api_type = "azure"
-    openai.api_base = f"https://{AZURE_OPENAI_SERVICE}.openai.azure.com"
-    openai.api_version = "2023-05-15"
-    openai.api_type = "azure_ad"
-    openai_token = azure_credential.get_token(
-        "https://cognitiveservices.azure.com/.default"
-    )
-    openai.api_key = openai_token.token
-    open_ai_token_cache[CACHE_KEY_CREATED_TIME] = time.time()
-    open_ai_token_cache[CACHE_KEY_TOKEN_CRED] = azure_credential
 
     # Create text index
     if args.recreate:
