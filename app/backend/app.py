@@ -17,14 +17,14 @@ CONFIG_OPENAI_TOKEN = "openai_token"
 CONFIG_CREDENTIAL = "azure_credential"
 CONFIG_EMBEDDING_DEPLOYMENT = "embedding_deployment"
 CONFIG_SEARCH_TEXT_INDEX = "search_text"
-CONFIG_SEARCH_WIKIPEDIA_INDEX = "search_wikipedia"
+CONFIG_SEARCH_CONDITIONS_INDEX = "search_conditions"
 CONFIG_SEARCH_IMAGES_INDEX = "search_images"
 CONFIG_INDEX = "index"
-CONFIG_INDEX_WIKIPEDIA = "index_wikipedia"
+CONFIG_INDEX_CONDITIONS = "index_conditions"
 
 dataSetConfigDict = {
      "sample": CONFIG_SEARCH_TEXT_INDEX,
-     "wikipedia": CONFIG_SEARCH_WIKIPEDIA_INDEX
+     "conditions": CONFIG_SEARCH_CONDITIONS_INDEX
 }
 
 bp = Blueprint("routes", __name__, static_folder="static")
@@ -131,7 +131,7 @@ async def update_efsearch():
     try:
         request_json = await request.get_json()
         newValue = request_json["efSearch"] if request_json.get("efSearch") else None
-        await current_app.config[CONFIG_INDEX_WIKIPEDIA].update_efsearch(int(newValue))
+        await current_app.config[CONFIG_INDEX_CONDITIONS].update_efsearch(int(newValue))
         ef_search = await current_app.config[CONFIG_INDEX].update_efsearch(int(newValue))
         return str(ef_search), 200
     except Exception as e:
@@ -186,7 +186,7 @@ async def setup_clients():
     AZURE_SEARCH_SERVICE_ENDPOINT = os.getenv("AZURE_SEARCH_SERVICE_ENDPOINT")
     AZURE_SEARCH_TEXT_INDEX_NAME = os.getenv("AZURE_SEARCH_TEXT_INDEX_NAME")
     AZURE_SEARCH_IMAGE_INDEX_NAME = os.getenv("AZURE_SEARCH_IMAGE_INDEX_NAME")
-    AZURE_SEARCH_WIKIPEDIA_INDEX_NAME = os.getenv("AZURE_SEARCH_WIKIPEDIA_INDEX_NAME")
+    AZURE_SEARCH_CONDITIONS_INDEX_NAME = os.getenv("AZURE_SEARCH_CONDITIONS_INDEX_NAME")
 
     # Use the current user identity to authenticate with Azure OpenAI, Cognitive Search and AI Vision (no secrets needed, just use 'az login' locally, and managed identity when deployed on Azure).
     # If you need to use keys, use separate AzureKeyCredential instances with the keys for each service.
@@ -215,9 +215,9 @@ async def setup_clients():
         index_name=AZURE_SEARCH_IMAGE_INDEX_NAME,
         credential=azure_credential,
     )
-    search_client_wikipedia = SearchClient(
+    search_client_conditions = SearchClient(
         endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
-        index_name=AZURE_SEARCH_WIKIPEDIA_INDEX_NAME,
+        index_name=AZURE_SEARCH_CONDITIONS_INDEX_NAME,
         credential=azure_credential,
     )
     index_client = SearchIndexClient(
@@ -236,9 +236,9 @@ async def setup_clients():
         AZURE_VISIONAI_API_VERSION,
         AZURE_VISIONAI_KEY,
     )
-    current_app.config[CONFIG_SEARCH_WIKIPEDIA_INDEX] = SearchText(search_client_wikipedia)
+    current_app.config[CONFIG_SEARCH_CONDITIONS_INDEX] = SearchText(search_client_conditions)
     current_app.config[CONFIG_INDEX] = IndexSchema(index_client, AZURE_SEARCH_TEXT_INDEX_NAME)
-    current_app.config[CONFIG_INDEX_WIKIPEDIA] = IndexSchema(index_client, AZURE_SEARCH_WIKIPEDIA_INDEX_NAME)
+    current_app.config[CONFIG_INDEX_CONDITIONS] = IndexSchema(index_client, AZURE_SEARCH_CONDITIONS_INDEX_NAME)
 
 def create_app():
     app = Quart(__name__)

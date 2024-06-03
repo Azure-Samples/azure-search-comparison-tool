@@ -40,7 +40,7 @@ const Vector: React.FC = () => {
     const Datasets: IDropdownOption[] = useMemo(
         () => [
             { key: "sample", text: "Azure Services", title: "Sample text data" },
-            { key: "wikipedia", text: "Wikipedia Articles", title: "Wikipedia articles data" }
+            { key: "conditions", text: "NHSUK Conditions", title: "Short conditions articles" }
         ],
         []
     );
@@ -48,8 +48,8 @@ const Vector: React.FC = () => {
     let sampleQueries: string[] = [];
     if (selectedDatasetKey === "sample") {
         sampleQueries = ["tools for software development", "herramientas para el desarrollo de software", "scalable storage solution"];
-    } else if (selectedDatasetKey === "wikipedia") {
-        sampleQueries = ["species of tigers", "world history", "global delicious food"];
+    } else if (selectedDatasetKey === "conditions") {
+        sampleQueries = ["heart attack", "cancer", "ADHD"];
     }
 
     useEffect(() => {

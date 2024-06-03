@@ -95,7 +95,7 @@ class SearchText:
                         "category": r["category"],
                     }
                 )
-            elif data_set == "wikipedia":
+            elif data_set == "conditions":
                 results.append(
                     {
                         "@search.score": r["@search.score"],
@@ -104,10 +104,10 @@ class SearchText:
                         "vector_id": r["vector_id"],
                         "id": r["id"],
                         "title": r["title"],
-                        "content": r["text"],
+                        "description": r["description"],
                         "url": r["url"],
                         "titleVector": r["titleVector"],
-                        "contentVector": r["contentVector"],
+                        "descriptionVector": r["descriptionVector"],
                     }
                 )
 

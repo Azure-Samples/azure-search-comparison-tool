@@ -20,7 +20,7 @@ param searchServiceResourceGroupLocation string = location
 param searchServiceSkuName string // Set in main.parameters.json
 param searchTextIndexName string // Set in main.parameters.json
 param searchImageIndexName string // Set in main.parameters.json
-param searchWikipediaIndexName string // Set in main.parameters.json
+param searchConditionsIndexName string // Set in main.parameters.json
 
 param storageAccountName string = ''
 param storageResourceGroupName string = ''
@@ -57,8 +57,21 @@ param createRoleForUser bool = true
 
 var abbrs = loadJsonContent('./abbreviations.json')
 
+param utcShort string = utcNow('d')
+
 // tags that should be applied to all resources.
-var tags = { 'azd-env-name': environmentName, owner: 'nathan.smith@nhschoices.net', 'cost code': 'P0840/01', 'created date': '30/05/2024', 'product owner': 'Lousie Cleaver', 'requested by': 'Nathan Smith', 'service-product': 'nhsuk site search', team: 'PH-CC', 'created by': 'Nathan Smith', environment: 'dev'}
+var tags = { 
+  'azd-env-name': environmentName
+  owner: 'martin.smyllie@nhschoices.net'
+  'cost code': 'P0840/01'
+  'created date': utcShort
+  'product owner': 'Martin Smyllie'
+  'requested by': 'Martin Smyllie'
+  'service-product': 'nhsuk site search poc'
+  team: 'PH-CC'
+  'created by': 'Martin Smyllie'
+  environment: 'Architecture'
+}
 
 // Generate a unique token to be used in naming resources.
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
@@ -160,7 +173,7 @@ module backend 'core/host/appservice.bicep' = {
       AZURE_SEARCH_SERVICE_ENDPOINT: searchService.outputs.endpoint
       AZURE_SEARCH_IMAGE_INDEX_NAME: searchImageIndexName 
       AZURE_SEARCH_TEXT_INDEX_NAME: searchTextIndexName
-      AZURE_SEARCH_WIKIPEDIA_INDEX_NAME: searchWikipediaIndexName
+      AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME: searchConditionsIndexName
       AZURE_VISIONAI_ENDPOINT: visionAi.outputs.endpoint
       AZURE_VISIONAI_KEY: visionAi.outputs.key
     }
@@ -336,7 +349,7 @@ output AZURE_VISIONAI_KEY string = visionAi.outputs.key
 output AZURE_SEARCH_SERVICE_ENDPOINT string = searchService.outputs.endpoint
 output AZURE_SEARCH_TEXT_INDEX_NAME string = searchTextIndexName
 output AZURE_SEARCH_IMAGE_INDEX_NAME string = searchImageIndexName
-output AZURE_SEARCH_WIKIPEDIA_INDEX_NAME string = searchWikipediaIndexName 
+output AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME string = searchConditionsIndexName 
 
 output AZURE_STORAGE_ACCOUNT string = storage.outputs.name
 output AZURE_STORAGE_CONTAINER string = storageContainerName
