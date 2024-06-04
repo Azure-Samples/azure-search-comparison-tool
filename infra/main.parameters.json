@@ -35,20 +35,8 @@
     "searchTextIndexName": {
       "value": "${AZURE_SEARCH_TEXT_INDEX=vectortextindex}"
     },
-    "searchImageIndexName": {
-      "value": "${AZURE_SEARCH_IMAGE_INDEX=vectorimageindex}"
-    },
     "searchConditionsIndexName": {
       "value": "${AZURE_SEARCH_CONDITIONS_INDEX=vectorconditionsindex}"
-    },
-    "storageAccountName": {
-      "value": "${AZURE_STORAGE_ACCOUNT}"
-    },
-    "storageResourceGroupName": {
-      "value": "${AZURE_STORAGE_RESOURCE_GROUP}"
-    },
-    "storageContainerName": {
-      "value": "${AZURE_STORAGE_CONTAINER=images}"
     },
     "createRoleForUser": {
       "value": "${CREATE_ROLE_FOR_USER=true}"

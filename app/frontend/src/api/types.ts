@@ -18,11 +18,6 @@ export interface TextSearchRequest {
     dataSet?: string;
 }
 
-export interface ImageSearchRequest {
-    query: string;
-    dataType: string;
-}
-
 export interface SearchResponse<T extends SearchResult> {
     results: T[];
 }
@@ -46,12 +41,6 @@ export interface TextSearchResult extends SearchResult {
     contentVector: number[];
     category?: string;
     url?: string;
-}
-
-export interface ImageSearchResult extends SearchResult {
-    id: string;
-    title: string;
-    imageUrl: string;
 }
 
 export interface ResultCard {

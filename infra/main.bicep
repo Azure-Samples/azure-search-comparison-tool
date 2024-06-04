@@ -19,7 +19,6 @@ param searchServiceResourceGroupName string = ''
 param searchServiceResourceGroupLocation string = location
 param searchServiceSkuName string // Set in main.parameters.json
 param searchTextIndexName string // Set in main.parameters.json
-param searchImageIndexName string // Set in main.parameters.json
 param searchConditionsIndexName string // Set in main.parameters.json
 
 param openAiServiceName string = ''
@@ -267,7 +266,6 @@ output AZURE_OPENAI_DEPLOYMENT_NAME string = embeddingDeploymentName
 
 output AZURE_SEARCH_SERVICE_ENDPOINT string = searchService.outputs.endpoint
 output AZURE_SEARCH_TEXT_INDEX_NAME string = searchTextIndexName
-output AZURE_SEARCH_IMAGE_INDEX_NAME string = searchImageIndexName
 output AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME string = searchConditionsIndexName 
 
 output REDIS_HOST string = redisCache.outputs.host

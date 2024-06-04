@@ -5,16 +5,11 @@ import json
 import random
 import string
 import time
-# import requests
 import uuid
-# import wget
-# import pandas as pd
 import redis
-# import zipfile
 
 from openai import AzureOpenAI
 from tenacity import retry, wait_random_exponential, stop_after_attempt
-# from azure.storage.blob import BlobServiceClient
 from azure.identity import DefaultAzureCredential
 from azure.search.documents import SearchClient
 from azure.search.documents.indexes import SearchIndexClient
@@ -41,8 +36,6 @@ AZURE_OPENAI_DEPLOYMENT_NAME = (
 AZURE_SEARCH_SERVICE_ENDPOINT = os.environ.get("AZURE_SEARCH_SERVICE_ENDPOINT")
 AZURE_SEARCH_TEXT_INDEX_NAME = os.environ.get("AZURE_SEARCH_TEXT_INDEX_NAME")
 AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME = os.environ.get("AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME")
-AZURE_STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
-AZURE_STORAGE_CONTAINER = os.environ.get("AZURE_STORAGE_CONTAINER")
 
 REDIS_HOST = os.environ.get("REDIS_HOST")
 REDIS_PORT = os.environ.get("REDIS_PORT")

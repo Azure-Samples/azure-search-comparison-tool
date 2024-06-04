@@ -10,7 +10,6 @@ from azure.search.documents.aio import SearchClient
 from azure.search.documents.indexes.aio import SearchIndexClient
 
 from searchText import SearchText
-from searchImages import SearchImages
 from indexSchema import IndexSchema
 
 CONFIG_OPENAI_TOKEN = "openai_token"
@@ -18,7 +17,6 @@ CONFIG_CREDENTIAL = "azure_credential"
 CONFIG_EMBEDDING_DEPLOYMENT = "embedding_deployment"
 CONFIG_SEARCH_TEXT_INDEX = "search_text"
 CONFIG_SEARCH_CONDITIONS_INDEX = "search_conditions"
-CONFIG_SEARCH_IMAGES_INDEX = "search_images"
 CONFIG_INDEX = "index"
 CONFIG_INDEX_CONDITIONS = "index_conditions"
 
@@ -28,7 +26,6 @@ dataSetConfigDict = {
 }
 
 bp = Blueprint("routes", __name__, static_folder="static")
-
 
 @bp.route("/", defaults={"path": "index.html"})
 @bp.route("/<path:path>")
@@ -101,22 +98,6 @@ async def search_text():
         return jsonify({"error": str(e)}), 500
 
 
-@bp.route("/searchImages", methods=["POST"])
-async def search_images():
-    if not request.is_json:
-        return jsonify({"error": "request must be json"}), 400
-    try:
-        request_json = await request.get_json()
-        r = await current_app.config[CONFIG_SEARCH_IMAGES_INDEX].search(
-            request_json["query"],
-            request_json["dataType"]
-        )
-
-        return jsonify(r), 200
-    except Exception as e:
-        logging.exception("Exception in /searchImages")
-        return jsonify({"error": str(e)}), 500
-
 @bp.route("/getEfSearch", methods=["GET"])
 async def get_efsearch():
     try:
@@ -178,14 +159,8 @@ async def setup_clients():
     AZURE_OPENAI_DEPLOYMENT_NAME = (
         os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME") or "embedding"
     )
-    AZURE_VISIONAI_ENDPOINT = os.getenv("AZURE_VISIONAI_ENDPOINT")
-    AZURE_VISIONAI_KEY = os.getenv("AZURE_VISIONAI_KEY")
-    AZURE_VISIONAI_API_VERSION = (
-        os.getenv("AZURE_VISIONAI_API_VERSION") or "2023-02-01-preview"
-    )
     AZURE_SEARCH_SERVICE_ENDPOINT = os.getenv("AZURE_SEARCH_SERVICE_ENDPOINT")
     AZURE_SEARCH_TEXT_INDEX_NAME = os.getenv("AZURE_SEARCH_TEXT_INDEX_NAME")
-    AZURE_SEARCH_IMAGE_INDEX_NAME = os.getenv("AZURE_SEARCH_IMAGE_INDEX_NAME")
     AZURE_SEARCH_CONDITIONS_INDEX_NAME = os.getenv("AZURE_SEARCH_CONDITIONS_INDEX_NAME")
 
     # Use the current user identity to authenticate with Azure OpenAI, Cognitive Search and AI Vision (no secrets needed, just use 'az login' locally, and managed identity when deployed on Azure).
@@ -210,11 +185,6 @@ async def setup_clients():
         index_name=AZURE_SEARCH_TEXT_INDEX_NAME,
         credential=azure_credential,
     )
-    search_client_images = SearchClient(
-        endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
-        index_name=AZURE_SEARCH_IMAGE_INDEX_NAME,
-        credential=azure_credential,
-    )
     search_client_conditions = SearchClient(
         endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
         index_name=AZURE_SEARCH_CONDITIONS_INDEX_NAME,
@@ -230,12 +200,6 @@ async def setup_clients():
     current_app.config[CONFIG_CREDENTIAL] = azure_credential
     current_app.config[CONFIG_EMBEDDING_DEPLOYMENT] = AZURE_OPENAI_DEPLOYMENT_NAME
     current_app.config[CONFIG_SEARCH_TEXT_INDEX] = SearchText(search_client_text)
-    current_app.config[CONFIG_SEARCH_IMAGES_INDEX] = SearchImages(
-        search_client_images,
-        AZURE_VISIONAI_ENDPOINT,
-        AZURE_VISIONAI_API_VERSION,
-        AZURE_VISIONAI_KEY,
-    )
     current_app.config[CONFIG_SEARCH_CONDITIONS_INDEX] = SearchText(search_client_conditions)
     current_app.config[CONFIG_INDEX] = IndexSchema(index_client, AZURE_SEARCH_TEXT_INDEX_NAME)
     current_app.config[CONFIG_INDEX_CONDITIONS] = IndexSchema(index_client, AZURE_SEARCH_CONDITIONS_INDEX_NAME)

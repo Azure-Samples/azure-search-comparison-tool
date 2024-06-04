@@ -1,6 +1,5 @@
 azure-identity==1.16.0
 azure-search-documents==11.4.0
-azure-storage-blob==12.20.0
 openai[datalib]==1.30.5
 tenacity==8.3.0
 redis==5.0.4
