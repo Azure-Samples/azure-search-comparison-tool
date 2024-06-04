@@ -2,7 +2,7 @@ import os
 import time
 import logging
 import gzip
-import openai
+from openai import AzureOpenAI
 from io import BytesIO
 from quart import Quart, request, jsonify, Blueprint, current_app
 from azure.identity.aio import DefaultAzureCredential
@@ -12,7 +12,11 @@ from azure.search.documents.indexes.aio import SearchIndexClient
 from searchText import SearchText
 from indexSchema import IndexSchema
 
+# config keys
+CONFIG_OPENAI_SERVICE = "openai_service"
 CONFIG_OPENAI_TOKEN = "openai_token"
+CONFIG_OPENAI_CLIENT = "openai_client"
+CONFIG_OPENAI_TOKEN_CREATED_TIME = "openai_token_created_at"
 CONFIG_CREDENTIAL = "azure_credential"
 CONFIG_EMBEDDING_DEPLOYMENT = "embedding_deployment"
 CONFIG_SEARCH_TEXT_INDEX = "search_text"
@@ -38,10 +42,15 @@ async def embed_query():
     try:
         request_json = await request.get_json()
         query = request_json["query"]
-        response = await openai.Embedding.acreate(
-            input=query, engine=current_app.config[CONFIG_EMBEDDING_DEPLOYMENT]
+
+        openai_client = current_app.config[CONFIG_OPENAI_CLIENT]
+
+        response = openai_client.embeddings.create(
+            input = query,
+            model = current_app.config[CONFIG_EMBEDDING_DEPLOYMENT]
         )
-        return response["data"][0]["embedding"], 200
+
+        return response.data[0].embedding, 200
     except Exception as e:
         logging.exception("Exception in /embedQuery")
         return jsonify({"error": str(e)}), 500
@@ -53,6 +62,7 @@ async def search_text():
         return jsonify({"error": "request must be json"}), 400
     try:
         request_json = await request.get_json()
+
         vector_search = (
             request_json["vectorSearch"] if request_json.get("vectorSearch") else False
         )
@@ -89,7 +99,7 @@ async def search_text():
             k=k,
             filter=filter,
             query_vector=query_vector,
-            data_set=data_set,
+            data_set=data_set
         )
 
         return jsonify(r), 200
@@ -121,13 +131,14 @@ async def update_efsearch():
 
 @bp.before_request
 async def ensure_openai_token():
-    openai_token = current_app.config[CONFIG_OPENAI_TOKEN]
-    if openai_token.expires_on < time.time() + 60:
-        openai_token = await current_app.config[CONFIG_CREDENTIAL].get_token(
-            "https://cognitiveservices.azure.com/.default"
-        )
-        current_app.config[CONFIG_OPENAI_TOKEN] = openai_token
-        openai.api_key = openai_token.token
+    if current_app.config[CONFIG_OPENAI_TOKEN_CREATED_TIME] + 300 < time.time():
+
+        azure_credential = current_app.config[CONFIG_CREDENTIAL]
+        openai_service = current_app.config[CONFIG_OPENAI_SERVICE]
+
+        logging.info("Refreshing OpenAI token")
+
+        current_app.config[CONFIG_OPENAI_TOKEN] = await get_openai_client(azure_credential, openai_service)
 
 
 @bp.after_request
@@ -161,23 +172,16 @@ async def setup_clients():
     )
     AZURE_SEARCH_SERVICE_ENDPOINT = os.getenv("AZURE_SEARCH_SERVICE_ENDPOINT")
     AZURE_SEARCH_TEXT_INDEX_NAME = os.getenv("AZURE_SEARCH_TEXT_INDEX_NAME")
-    AZURE_SEARCH_CONDITIONS_INDEX_NAME = os.getenv("AZURE_SEARCH_CONDITIONS_INDEX_NAME")
+    AZURE_SEARCH_CONDITIONS_INDEX_NAME = os.getenv("AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME")
 
     # Use the current user identity to authenticate with Azure OpenAI, Cognitive Search and AI Vision (no secrets needed, just use 'az login' locally, and managed identity when deployed on Azure).
     # If you need to use keys, use separate AzureKeyCredential instances with the keys for each service.
-    # If you encounter a blocking error during a DefaultAzureCredntial resolution, you can exclude the problematic credential by using a parameter (ex. exclude_shared_token_cache_credential=True).
+    # If you encounter a blocking error during a DefaultAzureCredential resolution, you can exclude the problematic credential by using a parameter (ex. exclude_shared_token_cache_credential=True).
     azure_credential = DefaultAzureCredential(
         exclude_shared_token_cache_credential=True
     )
-
-    # Used by the OpenAI SDK
-    openai.api_base = f"https://{AZURE_OPENAI_SERVICE}.openai.azure.com"
-    openai.api_version = "2023-05-15"
-    openai.api_type = "azure_ad"
-    openai_token = await azure_credential.get_token(
-        "https://cognitiveservices.azure.com/.default"
-    )
-    openai.api_key = openai_token.token
+    
+    openai_client = await get_openai_client(azure_credential, AZURE_OPENAI_SERVICE)
 
     # Set up clients for Cognitive Search
     search_client_text = SearchClient(
@@ -196,11 +200,17 @@ async def setup_clients():
     )
 
     # Store on app.config for later use inside requests
-    current_app.config[CONFIG_OPENAI_TOKEN] = openai_token
+    current_app.config[CONFIG_OPENAI_SERVICE] = AZURE_OPENAI_SERVICE
+    # current_app.config[CONFIG_OPENAI_TOKEN] = openai_token
     current_app.config[CONFIG_CREDENTIAL] = azure_credential
+    current_app.config[CONFIG_OPENAI_CLIENT] = openai_client
+    current_app.config[CONFIG_OPENAI_TOKEN_CREATED_TIME] = time.time()
     current_app.config[CONFIG_EMBEDDING_DEPLOYMENT] = AZURE_OPENAI_DEPLOYMENT_NAME
     current_app.config[CONFIG_SEARCH_TEXT_INDEX] = SearchText(search_client_text)
-    current_app.config[CONFIG_SEARCH_CONDITIONS_INDEX] = SearchText(search_client_conditions)
+    current_app.config[CONFIG_SEARCH_CONDITIONS_INDEX] = SearchText(
+        search_client_conditions, 
+        semantic_configuration_name="basic-semantic-config",
+        vector_field_names="titleVector,descriptionVector")
     current_app.config[CONFIG_INDEX] = IndexSchema(index_client, AZURE_SEARCH_TEXT_INDEX_NAME)
     current_app.config[CONFIG_INDEX_CONDITIONS] = IndexSchema(index_client, AZURE_SEARCH_CONDITIONS_INDEX_NAME)
 
@@ -208,3 +218,14 @@ def create_app():
     app = Quart(__name__)
     app.register_blueprint(bp)
     return app
+
+async def get_openai_client(azure_credential, openai_service_name):
+    openai_token = await azure_credential.get_token(
+        "https://cognitiveservices.azure.com/.default"
+    )
+    
+    return AzureOpenAI(
+        api_key = openai_token.token,  
+        api_version = "2024-02-01",
+        azure_endpoint = f"https://{openai_service_name}.openai.azure.com" 
+    )
