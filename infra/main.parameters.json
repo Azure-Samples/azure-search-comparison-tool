@@ -23,12 +23,6 @@
     "openAiSkuName": {
       "value": "S0"
     },
-    "visionAiServiceName": {
-      "value": "${AZURE_VISIONAI_SERVICE}"
-    },
-    "visionAiResourceGroupName": {
-      "value": "${AZURE_VISIONAI_RESOURCE_GROUP}"
-    },
     "searchServiceName": {
       "value": "${AZURE_SEARCH_SERVICE}"
     },
@@ -58,6 +52,9 @@
     },
     "createRoleForUser": {
       "value": "${CREATE_ROLE_FOR_USER=true}"
+    },
+    "redisCacheName": {
+      "value": "${AZURE_CACHE=vectorcache}"
     }
   }
 }

@@ -5,10 +5,11 @@ import json
 import random
 import string
 import time
-import requests
+# import requests
 import uuid
-import wget
-import pandas as pd
+# import wget
+# import pandas as pd
+import redis
 # import zipfile
 
 from openai import AzureOpenAI
@@ -39,21 +40,22 @@ AZURE_OPENAI_DEPLOYMENT_NAME = (
 )
 AZURE_SEARCH_SERVICE_ENDPOINT = os.environ.get("AZURE_SEARCH_SERVICE_ENDPOINT")
 AZURE_SEARCH_TEXT_INDEX_NAME = os.environ.get("AZURE_SEARCH_TEXT_INDEX_NAME")
-AZURE_SEARCH_IMAGE_INDEX_NAME = os.environ.get("AZURE_SEARCH_IMAGE_INDEX_NAME")
 AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME = os.environ.get("AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME")
 AZURE_STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
 AZURE_STORAGE_CONTAINER = os.environ.get("AZURE_STORAGE_CONTAINER")
+
+REDIS_HOST = os.environ.get("REDIS_HOST")
+REDIS_PORT = os.environ.get("REDIS_PORT")
+REDIS_PASSWORD = os.environ.get("REDIS_PRIMARYKEY")
 
 open_ai_token_cache = {}
 CACHE_KEY_TOKEN_CRED = "openai_token_cred"
 CACHE_KEY_CREATED_TIME = "created_time"
 
-
 def create_and_populate_search_index_text():
     created = create_search_index_text()
     if created:
         populate_search_index_text()
-
 
 def create_search_index_text():
     print(f"Ensuring search index {AZURE_SEARCH_TEXT_INDEX_NAME} exists")
@@ -221,24 +223,44 @@ def populate_search_index_nhs_conditions():
         index_name=AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME,
     )
 
+    redis_client = redis.StrictRedis(
+        host=REDIS_HOST,
+        port=REDIS_PORT,
+        password=REDIS_PASSWORD,
+        ssl=True,
+        decode_responses=True
+    )
+
     batched_treated_items = []
     batch_size = 4
 
     for item in items[:11]:
 
-        print(f"Generating Azure OpenAI embeddings for {item["id"]} ...")
-
         treated_item = {
             "id": item["id"],
             "title": item["title"],
-            "titleVector": generate_vectors(item["title"]),
-            "description": item["description"],
-            "descriptionVector": generate_vectors(item["description"])
+            "description": item["description"]
         }
 
-        batched_treated_items.append(treated_item)
+        item_key = f"{item['id']}_{AZURE_OPENAI_DEPLOYMENT_NAME}"
 
-        search_client.upload_documents(documents=[treated_item])
+        if redis_client.exists(item_key):
+            print(f"Document with id {item['id']} already exists in Redis cache, retrieving vectors.")
+
+            cached_item = json.loads(redis_client.get(item_key))
+            treated_item["titleVector"] = cached_item["titleVector"]
+            treated_item["descriptionVector"] = cached_item["descriptionVector"]
+        else:
+            print(f"Generating Azure OpenAI embeddings for {item["id"]} ...")
+
+            treated_item["titleVector"] = generate_vectors(item["title"])
+            treated_item["descriptionVector"] = generate_vectors(item["description"])
+            # Store vectors in Redis
+            redis_client.set(item_key, json.dumps({"titleVector": treated_item["titleVector"], "descriptionVector": treated_item["descriptionVector"]}))
+
+        print(f"Generating Azure OpenAI embeddings for {item["id"]} ...")
+
+        batched_treated_items.append(treated_item)
 
         if len(batched_treated_items) >= batch_size:
 
@@ -252,7 +274,6 @@ def populate_search_index_nhs_conditions():
 
         print(f"Uploading final batch of {len(batched_treated_items)} items ...")
         search_client.upload_documents(batched_treated_items)
-
 
     print(
         f"Uploaded {len(items[:11])} documents to index {AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME}"

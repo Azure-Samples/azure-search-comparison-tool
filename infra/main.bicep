@@ -22,11 +22,6 @@ param searchTextIndexName string // Set in main.parameters.json
 param searchImageIndexName string // Set in main.parameters.json
 param searchConditionsIndexName string // Set in main.parameters.json
 
-param storageAccountName string = ''
-param storageResourceGroupName string = ''
-param storageResourceGroupLocation string = location
-param storageContainerName string // Set in main.parameters.json
-
 param openAiServiceName string = ''
 param openAiResourceGroupName string = ''
 param openAiSkuName string // Set in main.parameters.json
@@ -44,16 +39,15 @@ param embeddingDeploymentName string = 'embedding'
 param embeddingDeploymentCapacity int = 30
 param embeddingModelName string = 'text-embedding-ada-002'
 
-param visionAiServiceName string = ''
-param visionAiResourceGroupName string = ''
-param visionAiResourceGroupLocation string = location
-param visionAiSkuName string = 'S1'
-
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
 
 @description('Flag to decide where to create roles for current user')
 param createRoleForUser bool = true
+
+param redisCacheName string = ''
+param redisSkuName string = 'Basic'
+param redisSkuCapacity int = 1
 
 var abbrs = loadJsonContent('./abbreviations.json')
 
@@ -87,16 +81,8 @@ resource openAiResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' exi
   name: !empty(openAiResourceGroupName) ? openAiResourceGroupName : resourceGroup.name
 }
 
-resource visionAiResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(visionAiResourceGroupName)) {
-  name: !empty(visionAiResourceGroupName) ? visionAiResourceGroupName : resourceGroup.name
-}
-
 resource searchServiceResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(searchServiceResourceGroupName)) {
   name: !empty(searchServiceResourceGroupName) ? searchServiceResourceGroupName : resourceGroup.name
-}
-
-resource storageResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(storageResourceGroupName)) {
-  name: !empty(storageResourceGroupName) ? storageResourceGroupName : resourceGroup.name
 }
 
 // Create an App Service Plan to group applications under the same payment plan and SKU
@@ -139,20 +125,6 @@ module openAi 'core/ai/aiservices.bicep' = {
   }
 }
 
-module visionAi 'core/ai/aiservices.bicep' = {
-  name: 'visionai'
-  scope: visionAiResourceGroup
-  params: {
-    name: !empty(visionAiServiceName) ? visionAiServiceName : '${abbrs.cognitiveServicesAccounts}visionai-${resourceToken}'
-    kind: 'ComputerVision'
-    location: visionAiResourceGroupLocation
-    tags: tags
-    sku: {
-      name: visionAiSkuName
-    }
-  }
-}
-
 // The application frontend
 module backend 'core/host/appservice.bicep' = {
   name: 'web'
@@ -171,11 +143,8 @@ module backend 'core/host/appservice.bicep' = {
       AZURE_OPENAI_SERVICE: openAi.outputs.name
       AZURE_OPENAI_DEPLOYMENT_NAME: embeddingDeploymentName
       AZURE_SEARCH_SERVICE_ENDPOINT: searchService.outputs.endpoint
-      AZURE_SEARCH_IMAGE_INDEX_NAME: searchImageIndexName 
       AZURE_SEARCH_TEXT_INDEX_NAME: searchTextIndexName
       AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME: searchConditionsIndexName
-      AZURE_VISIONAI_ENDPOINT: visionAi.outputs.endpoint
-      AZURE_VISIONAI_KEY: visionAi.outputs.key
     }
   }
 }
@@ -199,28 +168,19 @@ module searchService 'core/search/search-services.bicep' = {
   }
 }
 
-module storage 'core/storage/storage-account.bicep' = {
-  name: 'storage'
-  scope: storageResourceGroup
+// Add Azure Redis Cache
+module redisCache 'core/cache/rediscache.bicep' = {
+  name: 'redis-cache'
+  scope: resourceGroup
   params: {
-    name: !empty(storageAccountName) ? storageAccountName : '${abbrs.storageStorageAccounts}${resourceToken}'
-    location: storageResourceGroupLocation
+    name: !empty(redisCacheName) ? redisCacheName : 'redis-${resourceToken}'
+    location: location
     tags: tags
-    publicNetworkAccess: 'Enabled'
-    allowBlobPublicAccess: true
     sku: {
-      name: 'Standard_ZRS'
+      name: redisSkuName
+      family: 'C'
+      capacity: redisSkuCapacity
     }
-    deleteRetentionPolicy: {
-      enabled: true
-      days: 2
-    }
-    containers: [
-      {
-        name: storageContainerName
-        publicAccess: 'Blob'
-      }
-    ]
   }
 }
 
@@ -235,35 +195,6 @@ module openAiRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
   }
 }
 
-module visionAiRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
-  scope: visionAiResourceGroup
-  name: 'visionai-role-user'
-  params: {
-    principalId: principalId
-    roleDefinitionId: '93586559-c37d-4a6b-ba08-b9f0940c2d73'
-    principalType: 'User'
-  }
-}
-
-module storageRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
-  scope: storageResourceGroup
-  name: 'storage-role-user'
-  params: {
-    principalId: principalId
-    roleDefinitionId: '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1'
-    principalType: 'User'
-  }
-}
-
-module storageContribRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
-  scope: storageResourceGroup
-  name: 'storage-contribrole-user'
-  params: {
-    principalId: principalId
-    roleDefinitionId: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
-    principalType: 'User'
-  }
-}
 
 module searchRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
   scope: searchServiceResourceGroup
@@ -306,15 +237,6 @@ module openAiRoleBackend 'core/security/role.bicep' = {
   }
 }
 
-module storageRoleBackend 'core/security/role.bicep' = {
-  scope: storageResourceGroup
-  name: 'storage-role-backend'
-  params: {
-    principalId: backend.outputs.identityPrincipalId
-    roleDefinitionId: '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1'
-    principalType: 'ServicePrincipal'
-  }
-}
 
 module searchRoleBackend 'core/security/role.bicep' = {
   scope: searchServiceResourceGroup
@@ -343,14 +265,11 @@ output AZURE_RESOURCE_GROUP string = resourceGroup.name
 output AZURE_OPENAI_SERVICE string = openAi.outputs.name
 output AZURE_OPENAI_DEPLOYMENT_NAME string = embeddingDeploymentName
 
-output AZURE_VISIONAI_ENDPOINT string = visionAi.outputs.endpoint
-output AZURE_VISIONAI_KEY string = visionAi.outputs.key
-
 output AZURE_SEARCH_SERVICE_ENDPOINT string = searchService.outputs.endpoint
 output AZURE_SEARCH_TEXT_INDEX_NAME string = searchTextIndexName
 output AZURE_SEARCH_IMAGE_INDEX_NAME string = searchImageIndexName
 output AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME string = searchConditionsIndexName 
 
-output AZURE_STORAGE_ACCOUNT string = storage.outputs.name
-output AZURE_STORAGE_CONTAINER string = storageContainerName
-output AZURE_STORAGE_RESOURCE_GROUP string = storageResourceGroup.name
+output REDIS_HOST string = redisCache.outputs.host
+output REDIS_PORT int = redisCache.outputs.port
+output REDIS_PRIMARYKEY string = redisCache.outputs.primaryKey
