@@ -1,7 +1,7 @@
 on:
   workflow_dispatch:
   push:
-    # Run when commits are pushed to main branc
+    # Run when commits are pushed to main branch
     branches:
       - main
 

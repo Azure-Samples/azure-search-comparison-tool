@@ -227,7 +227,7 @@ def populate_search_index_nhs_conditions():
     batched_treated_items = []
     batch_size = 4
 
-    for item in items[:11]:
+    for item in items:
 
         treated_item = {
             "id": item["id"],
@@ -250,8 +250,6 @@ def populate_search_index_nhs_conditions():
             treated_item["descriptionVector"] = generate_vectors(item["description"])
             # Store vectors in Redis
             redis_client.set(item_key, json.dumps({"titleVector": treated_item["titleVector"], "descriptionVector": treated_item["descriptionVector"]}))
-
-        print(f"Generating Azure OpenAI embeddings for {item["id"]} ...")
 
         batched_treated_items.append(treated_item)
 
@@ -279,12 +277,6 @@ def delete_search_index(name: str):
         credential=azure_credential,
     )
     index_client.delete_index(name)
-
-
-def before_retry_sleep(retry_state):
-    print(
-        "Rate limited on the Azure OpenAI embeddings API, sleeping before retrying..."
-    )
 
 def generate_vectors(text):
 
