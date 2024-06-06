@@ -1,0 +1,61 @@
+[
+    {
+        "query": "Cancer",
+        "rankings": [
+            {
+                "id": "cancer",
+                "relevance": 100
+            },
+            {
+                "id": "bone-cancer",
+                "relevance": 90
+            },
+            {
+                "id": "lung-cancer",
+                "relevance": 90
+            },
+            {
+                "id": "stomach-cancer",
+                "relevance": 90
+            },
+            {
+                "id": "prostate-cancer",
+                "relevance": 90
+            }
+        ]
+    },
+    {
+        "query": "Acromegaly",
+        "rankings": [
+            {
+                "id": "acromegaly",
+                "relevance": 100
+            }
+        ]
+    },
+    {
+        "query": "Insomnia",
+        "rankings": [
+            {
+                "id": "insomnia",
+                "relevance": 100
+            },
+            {
+                "id": "jet-lag",
+                "relevance": 60
+            },
+            {
+                "id": "alcohol-misuse",
+                "relevance": 51
+            },
+            {
+                "id": "sleep-paralysis",
+                "relevance": 50
+            },
+            {
+                "id": "restless-legs-syndrome",
+                "relevance": 40
+            }
+        ]
+    }
+]

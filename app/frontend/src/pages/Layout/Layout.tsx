@@ -12,7 +12,7 @@ export const Layout = () => {
                 <div className={styles.headerContainer}>
                     <Link to="/" className={styles.headerTitleContainer}>
                         <img src={searchLogo} alt="Azure Cognitive Search logo" className={styles.headerLogo} />
-                        <h3 className={styles.headerTitle}>Vector Search Comparision Tool</h3>
+                        <h3 className={styles.headerTitle}>Vector Search Comparison Tool</h3>
                     </Link>
                     <nav>
                         <ul className={styles.headerNavList}>
@@ -22,13 +22,8 @@ export const Layout = () => {
                                 </NavLink>
                             </li>
                             <li className={styles.headerNavLeftMargin}>
-                                <NavLink to="/image" className={({ isActive }) => (isActive ? styles.headerNavPageLinkActive : styles.headerNavPageLink)}>
-                                    Image
-                                </NavLink>
-                            </li>
-                            <li className={styles.headerNavLeftMargin}>
                                 <a
-                                    href="https://github.com/Azure-Samples/azure-search-comparison-tool"
+                                    href="https://github.com/the-nathan-smith/azure-search-comparison-tool"
                                     target={"_blank"}
                                     title="Github repository link"
                                     rel="noreferrer"

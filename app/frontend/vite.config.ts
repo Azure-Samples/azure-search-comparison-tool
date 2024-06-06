@@ -13,7 +13,6 @@ export default defineConfig({
     server: {
         proxy: {
             "/searchText": "http://127.0.0.1:5000",
-            "/searchImages": "http://127.0.0.1:5000",
             "/embedQuery": "http://127.0.0.1:5000",
             "/getEfSearch": "http://127.0.0.1:5000",
             "/updateEfSearch": "http://127.0.0.1:5000"

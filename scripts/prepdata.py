@@ -5,59 +5,50 @@ import json
 import random
 import string
 import time
-import requests
 import uuid
-import wget
-import pandas as pd
-import zipfile
+import redis
 
-import openai
+from openai import AzureOpenAI
 from tenacity import retry, wait_random_exponential, stop_after_attempt
-from azure.storage.blob import BlobServiceClient
 from azure.identity import DefaultAzureCredential
 from azure.search.documents import SearchClient
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
     HnswParameters,
-    PrioritizedFields,
+    SemanticPrioritizedFields,
     SearchableField,
     SearchField,
     SearchFieldDataType,
     SearchIndex,
     SemanticConfiguration,
     SemanticField,
-    SemanticSettings,
+    SemanticSearch,
     SimpleField,
     VectorSearch,
-    VectorSearchAlgorithmConfiguration,
+    VectorSearchProfile,
+    HnswAlgorithmConfiguration,
 )
 
 AZURE_OPENAI_SERVICE = os.environ.get("AZURE_OPENAI_SERVICE")
 AZURE_OPENAI_DEPLOYMENT_NAME = (
     os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME") or "embedding"
 )
-AZURE_VISIONAI_ENDPOINT = os.environ.get("AZURE_VISIONAI_ENDPOINT")
-AZURE_VISIONAI_KEY = os.environ.get("AZURE_VISIONAI_KEY")
-AZURE_VISIONAI_API_VERSION = (
-    os.environ.get("AZURE_VISIONAI_API_VERSION") or "2023-02-01-preview"
-)
 AZURE_SEARCH_SERVICE_ENDPOINT = os.environ.get("AZURE_SEARCH_SERVICE_ENDPOINT")
 AZURE_SEARCH_TEXT_INDEX_NAME = os.environ.get("AZURE_SEARCH_TEXT_INDEX_NAME")
-AZURE_SEARCH_IMAGE_INDEX_NAME = os.environ.get("AZURE_SEARCH_IMAGE_INDEX_NAME")
-AZURE_SEARCH_WIKIPEDIA_INDEX_NAME = os.environ.get("AZURE_SEARCH_WIKIPEDIA_INDEX_NAME")
-AZURE_STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
-AZURE_STORAGE_CONTAINER = os.environ.get("AZURE_STORAGE_CONTAINER")
+AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME = os.environ.get("AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME")
+
+REDIS_HOST = os.environ.get("REDIS_HOST")
+REDIS_PORT = os.environ.get("REDIS_PORT")
+REDIS_PASSWORD = os.environ.get("REDIS_PRIMARYKEY")
 
 open_ai_token_cache = {}
 CACHE_KEY_TOKEN_CRED = "openai_token_cred"
 CACHE_KEY_CREATED_TIME = "created_time"
 
-
 def create_and_populate_search_index_text():
     created = create_search_index_text()
     if created:
         populate_search_index_text()
-
 
 def create_search_index_text():
     print(f"Ensuring search index {AZURE_SEARCH_TEXT_INDEX_NAME} exists")
@@ -99,25 +90,24 @@ def create_search_index_text():
             ],
             vector_search=VectorSearch(
                 algorithm_configurations=[
-                    VectorSearchAlgorithmConfiguration(
+                    HnswAlgorithmConfiguration(
                         name="my-vector-config",
-                        kind="hnsw",
-                        hnsw_parameters=HnswParameters(
+                        parameters=HnswParameters(
                             m=4, ef_construction=400, ef_search=500, metric="cosine"
                         ),
                     )
                 ]
             ),
-            semantic_settings=SemanticSettings(
+            semantic_search=SemanticSearch(
                 configurations=[
                     SemanticConfiguration(
                         name="my-semantic-config",
-                        prioritized_fields=PrioritizedFields(
+                        prioritized_fields=SemanticPrioritizedFields(
                             title_field=SemanticField(field_name="title"),
-                            prioritized_content_fields=[
+                            content_fields=[
                                 SemanticField(field_name="content")
                             ],
-                            prioritized_keywords_fields=[
+                            keywords_fields=[
                                 SemanticField(field_name="category")
                             ],
                         ),
@@ -132,7 +122,6 @@ def create_search_index_text():
         print(f"Search index {AZURE_SEARCH_TEXT_INDEX_NAME} already exists")
         return False
 
-
 def populate_search_index_text():
     print(f"Populating search index {AZURE_SEARCH_TEXT_INDEX_NAME} with documents")
 
@@ -141,8 +130,8 @@ def populate_search_index_text():
 
     print(f"Generating Azure OpenAI embeddings...")
     for item in input_data:
-        item["titleVector"] = generate_text_embeddings(item["title"])
-        item["contentVector"] = generate_text_embeddings(item["content"])
+        item["titleVector"] = generate_vectors(item["title"])
+        item["contentVector"] = generate_vectors(item["content"])
 
     print(f"Uploading documents...")
     search_client = SearchClient(
@@ -155,217 +144,131 @@ def populate_search_index_text():
         f"Uploaded {len(input_data)} documents to index {AZURE_SEARCH_TEXT_INDEX_NAME}"
     )
 
-
-def create_and_populate_search_index_images():
-    created = create_search_index_images()
+def create_and_populate_search_index_nhs_conditions():
+    created = create_search_index_nhs_conditions()
     if created:
-        populate_search_index_images()
+        populate_search_index_nhs_conditions()
 
-
-def create_search_index_images():
-    print(f"Ensuring search index {AZURE_SEARCH_IMAGE_INDEX_NAME} exists")
+def create_search_index_nhs_conditions():
+    print(f"Ensuring search index {AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME} exists")
     index_client = SearchIndexClient(
         endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
         credential=azure_credential,
     )
-    if AZURE_SEARCH_IMAGE_INDEX_NAME not in index_client.list_index_names():
+    if AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME not in index_client.list_index_names():
         index = SearchIndex(
-            name=AZURE_SEARCH_IMAGE_INDEX_NAME,
+            name=AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME,
             fields=[
-                SimpleField(
-                    name="id",
-                    type=SearchFieldDataType.String,
-                    key=True,
-                    sortable=True,
-                ),
+                SimpleField(name="id", key=True, type=SearchFieldDataType.String),
                 SearchableField(name="title", type=SearchFieldDataType.String),
-                SimpleField(name="imageUrl", type=SearchFieldDataType.String),
-                SearchField(
-                    name="imageVector",
-                    type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
-                    searchable=True,
-                    vector_search_dimensions=1024,
-                    vector_search_configuration="my-vector-config",
-                ),
-            ],
-            vector_search=VectorSearch(
-                algorithm_configurations=[
-                    VectorSearchAlgorithmConfiguration(
-                        name="my-vector-config",
-                        kind="hnsw",
-                        hnsw_parameters=HnswParameters(
-                            m=4, ef_construction=400, ef_search=1000, metric="cosine"
-                        ),
-                    )
-                ]
-            ),
-        )
-        print(f"Creating {AZURE_SEARCH_IMAGE_INDEX_NAME} search index")
-        index_client.create_index(index)
-        return True
-    else:
-        print(f"Search index {AZURE_SEARCH_IMAGE_INDEX_NAME} already exists")
-        return False
-
-
-def populate_search_index_images():
-    search_client = SearchClient(
-        endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
-        credential=azure_credential,
-        index_name=AZURE_SEARCH_IMAGE_INDEX_NAME,
-    )
-
-    blob_container = BlobServiceClient(
-        account_url=f"https://{AZURE_STORAGE_ACCOUNT}.blob.core.windows.net",
-        credential=azure_credential,
-    ).get_container_client(AZURE_STORAGE_CONTAINER)
-
-    if not blob_container.exists():
-        print(
-            f"Creating blob container {AZURE_STORAGE_CONTAINER} in storage account {AZURE_STORAGE_ACCOUNT}"
-        )
-        blob_container.create_container()
-
-    print(f"Uploading, embedding and indexing images...")
-    for root, dirs, files in os.walk("data/images"):
-        for file in files:
-            with open(os.path.join(root, file), "rb") as data:
-                blob_container.upload_blob(name=file, data=data, overwrite=True)
-
-            url = f"https://{AZURE_STORAGE_ACCOUNT}.blob.core.windows.net/{AZURE_STORAGE_CONTAINER}/{file}"
-            doc = {
-                "id": generate_azuresearch_id(),
-                "title": file,
-                "imageUrl": url,
-                "imageVector": generate_images_embeddings(url),
-            }
-            search_client.upload_documents(doc)
-            print(f"{file}")
-
-def create_and_populate_search_index_wikipedia():
-    created = create_search_index_wikipedia()
-    if created:
-        populate_search_index_wikipedia()
-
-
-def create_search_index_wikipedia():
-    print(f"Ensuring search index {AZURE_SEARCH_WIKIPEDIA_INDEX_NAME} exists")
-    index_client = SearchIndexClient(
-        endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
-        credential=azure_credential,
-    )
-    if AZURE_SEARCH_WIKIPEDIA_INDEX_NAME not in index_client.list_index_names():
-        index = SearchIndex(
-            name=AZURE_SEARCH_WIKIPEDIA_INDEX_NAME,
-            fields=[
-                SimpleField(
-                    name="vector_id",
-                    type=SearchFieldDataType.String,
-                    key=True,
-                    filterable=True,
-                    sortable=True,
-                    facetable=True,
-                ),
-                SimpleField(name="id", type=SearchFieldDataType.String),
-                SimpleField(name="url", type=SearchFieldDataType.String),
-                SearchableField(name="title", type=SearchFieldDataType.String),
-                SearchableField(name="text", type=SearchFieldDataType.String),
+                SearchableField(name="description", type=SearchFieldDataType.String),
                 SearchField(
                     name="titleVector",
                     type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                     searchable=True,
                     vector_search_dimensions=1536,
-                    vector_search_configuration="my-vector-config",
+                    vector_search_profile_name="hnswProfile",
                 ),
                 SearchField(
-                    name="contentVector",
+                    name="descriptionVector",
                     type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                     searchable=True,
                     vector_search_dimensions=1536,
-                    vector_search_configuration="my-vector-config",
+                    vector_search_profile_name="hnswProfile",
                 ),
             ],
             vector_search=VectorSearch(
-                algorithm_configurations=[
-                    VectorSearchAlgorithmConfiguration(
-                        name="my-vector-config",
-                        kind="hnsw",
-                        hnsw_parameters=HnswParameters(
-                            m=4, ef_construction=400, ef_search=500, metric="cosine"
-                        ),
-                    )
-                ]
+                algorithms=[HnswAlgorithmConfiguration(name="pdfHnsw")],
+                profiles=[VectorSearchProfile(name="hnswProfile",
+                                                algorithm_configuration_name="pdfHnsw")
+                            ]
             ),
-            semantic_settings=SemanticSettings(
+            semantic_search=SemanticSearch(
                 configurations=[
                     SemanticConfiguration(
-                        name="my-semantic-config",
-                        prioritized_fields=PrioritizedFields(
+                        name="basic-semantic-config",
+                        prioritized_fields=SemanticPrioritizedFields(
                             title_field=SemanticField(field_name="title"),
-                            prioritized_content_fields=[
-                                SemanticField(field_name="text")
-                            ],
-                            prioritized_keywords_fields=[
-                                SemanticField(field_name="url")
+                            content_fields=[
+                                SemanticField(field_name="description")
                             ],
                         ),
                     )
                 ]
             ),
         )
-        print(f"Creating {AZURE_SEARCH_WIKIPEDIA_INDEX_NAME} search index")
+        print(f"Creating {AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME} search index")
         index_client.create_index(index)
         return True
     else:
-        print(f"Search index {AZURE_SEARCH_WIKIPEDIA_INDEX_NAME} already exists")
+        print(f"Search index {AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME} already exists")
         return False
 
+def populate_search_index_nhs_conditions():
+    print(f"Populating search index {AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME} with documents")
 
-def populate_search_index_wikipedia():
-    print(f"Populating search index {AZURE_SEARCH_WIKIPEDIA_INDEX_NAME} with documents")
+    with open("data/conditions_1.json", "r", encoding="utf-8") as file:
+        items = json.load(file)
 
-    embeddings_url = "https://cdn.openai.com/API/examples/data/vector_database_wikipedia_articles_embedded.zip"
-    zipFilename = "vector_database_wikipedia_articles_embedded.zip"
-    csvFilename = "vector_database_wikipedia_articles_embedded.csv"
-    folderPath = "data/wikipedia"
-    zipFilePath = os.path.join(folderPath,zipFilename)
-    cvsFilePath = os.path.join(folderPath,csvFilename)
-    if not os.path.exists(folderPath):
-        os.makedirs(folderPath)
-
-    if not os.path.exists(zipFilePath):
-        wget.download(embeddings_url, out=folderPath)
-    
-    with zipfile.ZipFile(zipFilePath,"r") as zip_ref:
-        zip_ref.extract(csvFilename, folderPath)
-
-    article_df = pd.read_csv(cvsFilePath)
-    article_df.rename(columns = {'title_vector':'titleVector', 'content_vector': 'contentVector'}, inplace=True)
-  
-    # Read vectors from strings back into a list using json.loads  
-    article_df["titleVector"] = article_df.titleVector.apply(json.loads)  
-    article_df["contentVector"] = article_df.contentVector.apply(json.loads)  
-    article_df['id'] = article_df['id'].astype(str)  
-    article_df['vector_id'] = article_df['vector_id'].astype(str)
-    documents = article_df.to_dict(orient='records')
-
-    print(f"Uploading documents...")
     search_client = SearchClient(
         endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
         credential=azure_credential,
-        index_name=AZURE_SEARCH_WIKIPEDIA_INDEX_NAME,
+        index_name=AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME,
     )
 
-    batch_size = 250  
-    batches = [documents[i:i + batch_size] for i in range(0, len(documents), batch_size)]  
-  
-    for batch in batches:  
-        search_client.upload_documents(batch) 
+    redis_client = redis.StrictRedis(
+        host=REDIS_HOST,
+        port=REDIS_PORT,
+        password=REDIS_PASSWORD,
+        ssl=True,
+        decode_responses=True
+    )
+
+    batched_treated_items = []
+    batch_size = 4
+
+    for item in items:
+
+        treated_item = {
+            "id": item["id"],
+            "title": item["title"],
+            "description": item["description"]
+        }
+
+        item_key = f"{item['id']}_{AZURE_OPENAI_DEPLOYMENT_NAME}"
+
+        if redis_client.exists(item_key):
+            print(f"Document with id {item['id']} already exists in Redis cache, retrieving vectors.")
+
+            cached_item = json.loads(redis_client.get(item_key))
+            treated_item["titleVector"] = cached_item["titleVector"]
+            treated_item["descriptionVector"] = cached_item["descriptionVector"]
+        else:
+            print(f"Generating Azure OpenAI embeddings for {item["id"]} ...")
+
+            treated_item["titleVector"] = generate_vectors(item["title"])
+            treated_item["descriptionVector"] = generate_vectors(item["description"])
+            # Store vectors in Redis
+            redis_client.set(item_key, json.dumps({"titleVector": treated_item["titleVector"], "descriptionVector": treated_item["descriptionVector"]}))
+
+        batched_treated_items.append(treated_item)
+
+        if len(batched_treated_items) >= batch_size:
+
+            print(f"Uploading batch of {len(batched_treated_items)} items ...")
+
+            search_client.upload_documents(batched_treated_items)
+
+            batched_treated_items.clear()
+
+    if len(batched_treated_items) >= 0:
+
+        print(f"Uploading final batch of {len(batched_treated_items)} items ...")
+        search_client.upload_documents(batched_treated_items)
+
     print(
-        f"Uploaded {len(documents)} documents to index {AZURE_SEARCH_WIKIPEDIA_INDEX_NAME}"
+        f"Uploaded {len(items[:11])} documents to index {AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME}"
     )
-
-
 
 def delete_search_index(name: str):
     print(f"Deleting search index {name}")
@@ -375,46 +278,20 @@ def delete_search_index(name: str):
     )
     index_client.delete_index(name)
 
+def generate_vectors(text):
 
-def before_retry_sleep(retry_state):
-    print(
-        "Rate limited on the Azure OpenAI embeddings API, sleeping before retrying..."
+    client = AzureOpenAI(
+        api_key = get_openai_key(),  
+        api_version = "2024-02-01",
+        azure_endpoint = f"https://{AZURE_OPENAI_SERVICE}.openai.azure.com" 
     )
 
-
-@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(15))
-def generate_images_embeddings(image_url):
-    response = requests.post(
-        f"{AZURE_VISIONAI_ENDPOINT}computervision/retrieval:vectorizeImage",
-        params={"api-version": AZURE_VISIONAI_API_VERSION},
-        headers={
-            "Content-Type": "application/json",
-            "Ocp-Apim-Subscription-Key": AZURE_VISIONAI_KEY,
-        },
-        json={"url": image_url},
+    response = client.embeddings.create(
+        input = text,
+        model = AZURE_OPENAI_DEPLOYMENT_NAME  # model = "deployment_name".
     )
-    return response.json()["vector"]
 
-
-@retry(
-    wait=wait_random_exponential(min=1, max=60),
-    stop=stop_after_attempt(15),
-    before_sleep=before_retry_sleep,
-)
-def generate_text_embeddings(text):
-    refresh_openai_token()
-    response = openai.Embedding.create(input=text, engine=AZURE_OPENAI_DEPLOYMENT_NAME)
-    return response["data"][0]["embedding"]
-
-
-# refresh open ai token every 5 minutes
-def refresh_openai_token():
-    if open_ai_token_cache[CACHE_KEY_CREATED_TIME] + 300 < time.time():
-        token_cred = open_ai_token_cache[CACHE_KEY_TOKEN_CRED]
-        openai.api_key = token_cred.get_token(
-            "https://cognitiveservices.azure.com/.default"
-        ).token
-        open_ai_token_cache[CACHE_KEY_CREATED_TIME] = time.time()
+    return response.data[0].embedding
 
 
 def generate_azuresearch_id():
@@ -423,6 +300,21 @@ def generate_azuresearch_id():
         first_char = random.choice(string.ascii_letters + string.digits)
         id = first_char + id[1:]
     return id
+
+def get_openai_key():
+
+    if (not CACHE_KEY_CREATED_TIME in open_ai_token_cache) or open_ai_token_cache[CACHE_KEY_CREATED_TIME] + 300 < time.time():
+
+        openai_token = azure_credential.get_token(
+            "https://cognitiveservices.azure.com/.default"
+        )
+
+        open_ai_token_cache[CACHE_KEY_CREATED_TIME] = time.time()
+        open_ai_token_cache[CACHE_KEY_TOKEN_CRED] = openai_token
+    else:
+        openai_token = open_ai_token_cache[CACHE_KEY_TOKEN_CRED]
+
+    return openai_token.token
 
 
 if __name__ == "__main__":
@@ -442,31 +334,14 @@ if __name__ == "__main__":
         exclude_shared_token_cache_credential=True
     )
 
-    # Used by the OpenAI SDK
-    openai.api_type = "azure"
-    openai.api_base = f"https://{AZURE_OPENAI_SERVICE}.openai.azure.com"
-    openai.api_version = "2023-05-15"
-    openai.api_type = "azure_ad"
-    openai_token = azure_credential.get_token(
-        "https://cognitiveservices.azure.com/.default"
-    )
-    openai.api_key = openai_token.token
-    open_ai_token_cache[CACHE_KEY_CREATED_TIME] = time.time()
-    open_ai_token_cache[CACHE_KEY_TOKEN_CRED] = azure_credential
-
     # Create text index
     if args.recreate:
         delete_search_index(AZURE_SEARCH_TEXT_INDEX_NAME)
     create_and_populate_search_index_text()
 
-    # Create image index
+    # Create NHS conditions index
     if args.recreate:
-        delete_search_index(AZURE_SEARCH_IMAGE_INDEX_NAME)
-    create_and_populate_search_index_images()
-
-    # Create wikipedia index
-    if args.recreate:
-        delete_search_index(AZURE_SEARCH_WIKIPEDIA_INDEX_NAME)
-    create_and_populate_search_index_wikipedia()
+        delete_search_index(AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME)
+    create_and_populate_search_index_nhs_conditions()
  
     print("Completed successfully")
