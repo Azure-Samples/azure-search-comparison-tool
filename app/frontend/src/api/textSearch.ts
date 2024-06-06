@@ -15,7 +15,8 @@ export const getTextSearchResults = async (
         select: select,
         vectorSearch: false,
         hybridSearch: false,
-        dataSet: dataSet
+        dataSet: dataSet,
+        approach: approach
     };
 
     if (approach === "vec" || approach === "hs" || approach === "hssr") {

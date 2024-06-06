@@ -2,6 +2,8 @@ import os
 import time
 import logging
 import gzip
+import logging.config
+import yaml
 from openai import AzureOpenAI
 from io import BytesIO
 from quart import Quart, request, jsonify, Blueprint, current_app
@@ -14,7 +16,6 @@ from indexSchema import IndexSchema
 
 # config keys
 CONFIG_OPENAI_SERVICE = "openai_service"
-CONFIG_OPENAI_TOKEN = "openai_token"
 CONFIG_OPENAI_CLIENT = "openai_client"
 CONFIG_OPENAI_TOKEN_CREATED_TIME = "openai_token_created_at"
 CONFIG_CREDENTIAL = "azure_credential"
@@ -99,7 +100,8 @@ async def search_text():
             k=k,
             filter=filter,
             query_vector=query_vector,
-            data_set=data_set
+            data_set=data_set,
+            approach=request_json["approach"]
         )
 
         return jsonify(r), 200
@@ -131,6 +133,7 @@ async def update_efsearch():
 
 @bp.before_request
 async def ensure_openai_token():
+
     if current_app.config[CONFIG_OPENAI_TOKEN_CREATED_TIME] + 300 < time.time():
 
         azure_credential = current_app.config[CONFIG_CREDENTIAL]
@@ -138,8 +141,7 @@ async def ensure_openai_token():
 
         logging.info("Refreshing OpenAI token")
 
-        current_app.config[CONFIG_OPENAI_TOKEN] = await get_openai_client(azure_credential, openai_service)
-
+        current_app.config[CONFIG_OPENAI_CLIENT] = await get_openai_client(azure_credential, openai_service)
 
 @bp.after_request
 async def gzip_response(response):
@@ -217,6 +219,9 @@ async def setup_clients():
 def create_app():
     app = Quart(__name__)
     app.register_blueprint(bp)
+
+    init_logging()
+
     return app
 
 async def get_openai_client(azure_credential, openai_service_name):
@@ -229,3 +234,11 @@ async def get_openai_client(azure_credential, openai_service_name):
         api_version = "2024-02-01",
         azure_endpoint = f"https://{openai_service_name}.openai.azure.com" 
     )
+
+def init_logging():
+
+    # Load the config file
+    with open('logging_config.yaml', 'rt') as f:
+        config = yaml.safe_load(f.read())
+
+    logging.config.dictConfig(config)

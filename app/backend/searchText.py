@@ -1,7 +1,8 @@
+import logging
 from typing import Any
 from azure.search.documents.aio import SearchClient
 from azure.search.documents.models import QueryType, QueryCaptionType, QueryAnswerType, VectorizedQuery
-
+from ranking import Ranking
 
 class SearchText:
     def __init__(self, 
@@ -11,6 +12,15 @@ class SearchText:
         self.search_client = search_client
         self.semantic_configuration_name = semantic_configuration_name
         self.vector_field_names = vector_field_names
+        self.ranking = Ranking()
+        self.logger = logging.getLogger(__name__)
+
+        self.approach = {
+             "text": "Text Only (BM25)",
+             "vec": "Vectors Only (ANN)",
+             "hs": "Vectors + Text (Hybrid Search)",
+             "hssr": "Hybrid + Semantic Reranking"
+        }
 
     async def search(
         self,
@@ -23,8 +33,10 @@ class SearchText:
         k: int | None = None,
         filter: str | None = None,
         query_vector: list[float] | None = None,
-        data_set: str = "sample"
+        data_set: str = "sample",
+        approach: str = "undefined"
     ):
+
         # Vectorize query
         query_vector = query_vector if use_vector_search else None
 
@@ -71,6 +83,8 @@ class SearchText:
             highlight_post_tag=highlight_post_tag
         )
 
+        can_calc_ncdg = self.ranking.hasIdealRanking(query)
+
         results = []
         async for r in search_results:
             captions = (
@@ -111,6 +125,19 @@ class SearchText:
                         "descriptionVector": r["descriptionVector"],
                     }
                 )
+
+                self.logger.debug(f"{r["@search.score"]} - {r["id"]}")
+
+        if can_calc_ncdg and data_set == "conditions":
+
+            ordered_result_ids = []
+
+            for result in results:
+                ordered_result_ids.append(result["id"])
+                
+            ranking_result = self.ranking.rank_results(query, ordered_result_ids)
+
+            self.logger.info(f"{self.approach[approach]}  => NDCG:{ranking_result}")
 
         return {
             "results": results,

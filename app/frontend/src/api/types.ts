@@ -16,6 +16,7 @@ export interface TextSearchRequest {
     useSemanticCaptions?: boolean;
     queryVector?: number[];
     dataSet?: string;
+    approach: "text" | "vec" | "hs" | "hssr" | undefined;
 }
 
 export interface SearchResponse<T extends SearchResult> {
