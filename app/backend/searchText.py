@@ -135,14 +135,32 @@ class SearchText:
 
             ordered_result_ids = []
 
+            actual_results = []
+
             for result in results:
                 ordered_result_ids.append(result["id"])
+                actual_results.append({"id": result["id"], "score": result["@search.score"]})
                 
             ranking_result = self.ranking.rank_results(query, ordered_result_ids)
 
-            self.logger.info(f"{self.approach[approach]}  => NDCG:{ranking_result}")
+            self.logger.info(f"{self.approach[approach]}  => NDCG:{ranking_result["ndcg"]}")
 
-            self.results.add(query, approach, ranking_result)
+            for key, value in list(ranking_result["result_rankings"].items()):
+
+                result = next((item for item in actual_results if item.get("id") == key), None)
+
+                result["relevance"] = value
+
+                self.logger.debug(result)
+
+
+            ideal_results = []
+
+            for key, value in list(ranking_result["ideal_rankings"].items()):
+                print(f"{key}->{value}")
+                ideal_results.append({"id": key, "relevance": value})
+
+            self.results.add(query, approach, ranking_result["ndcg"], ideal_results, actual_results)
 
         return {
             "results": results,

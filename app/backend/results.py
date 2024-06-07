@@ -11,27 +11,58 @@ class Results:
         self.userName = userName
         self.password = password
 
-    def add(self, search_query: str, approach: str, ndcg):
+    def add(self, search_query: str, approach: str, ndcg, ideal_results, actual_results):
 
         db = self.__connect()
 
-        # Define your SQL query with named parameters
         query = """
         INSERT INTO public.poc_results (search_query, approach_code, ndcg, search_time)
-        VALUES(%(q)s, %(a)s, %(ndcg)s, NOW())
+        VALUES(%(query)s, %(approach)s, %(ndcg)s, NOW())
         RETURNING result_id;
         """
         
-        # Define the parameters to bind
         params = {
-            "q": search_query,
-            "a": approach,
+            "query": search_query,
+            "approach": approach,
             "ndcg": ndcg
         }
 
         result_id = db.one(query, params)
 
         self.logger.debug(result_id)
+
+        query = """
+        INSERT INTO public.poc_ideal_result_rankings (result_id, rank, article_id, relevance_score)
+        VALUES(%(r_id)s, %(rank)s, %(article)s, %(relevance)s);
+        """
+        
+        for rank, ideal_result in enumerate(ideal_results):
+            
+            params = {
+                "r_id": result_id,
+                "rank": rank,
+                "article": ideal_result["id"],
+                "relevance": ideal_result["relevance"]
+            }
+
+            db.one(query, params)
+
+        query = """
+        INSERT INTO public.poc_actual_result_rankings (result_id, rank, article_id, relevance_score, azure_ai_score)
+        VALUES(%(r_id)s, %(rank)s, %(article)s, %(relevance)s, %(score)s);
+        """
+
+        for rank, actual_result in enumerate(actual_results):
+            
+            params = {
+                "r_id": result_id,
+                "rank": rank,
+                "article": actual_result["id"],
+                "relevance": actual_result["relevance"],
+                "score": actual_result["score"]
+            }
+
+            db.one(query, params)
 
     def __connect(self):
         try:

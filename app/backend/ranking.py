@@ -41,9 +41,13 @@ class Ranking:
         # Calculate the Normalized Discounted Cumulative Gain (NDCG).
         ndcg_result = actual_dcg / ideal_dcg if ideal_dcg > 0 else 0.0
 
-        self.logger.debug(f"RESULT:{ndcg_result} actual dcg:{actual_dcg} ideal dcg:{ideal_dcg}")
+        self.logger.debug(f"NDCG:{ndcg_result} actual dcg:{actual_dcg} ideal dcg:{ideal_dcg}")
 
-        return ndcg_result
+        return {
+            "ndcg": ndcg_result,
+            "ideal_rankings": ideal_rankings,
+            "result_rankings": result_rankings
+        }
     
     def __get_ideal_rankings(self, query: str):
 
