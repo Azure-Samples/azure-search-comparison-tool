@@ -43,6 +43,15 @@
     },
     "redisCacheName": {
       "value": "${AZURE_CACHE=vectorcache}"
+    },
+    "resultsDBServerName": {
+      "value": "${AZURE_RESULTS_DB}"
+    },
+    "resultsDBAdminLogin": {
+      "value": "${POSTGRES_SERVER_ADMIN_LOGIN}"
+    },
+    "resultsDBAdminPassword": {
+      "value": "${AZURE_RESULTS_DB_ADMIN_PASSWORD}"
     }
   }
 }

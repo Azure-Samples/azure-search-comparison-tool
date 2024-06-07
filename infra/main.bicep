@@ -48,6 +48,11 @@ param redisCacheName string = ''
 param redisSkuName string = 'Basic'
 param redisSkuCapacity int = 1
 
+param resultsDBServerName string = ''
+param resultsDBAdminLogin string = ''
+@secure()
+param resultsDBAdminPassword string
+
 var abbrs = loadJsonContent('./abbreviations.json')
 
 param utcShort string = utcNow('d')
@@ -183,6 +188,20 @@ module redisCache 'core/cache/rediscache.bicep' = {
   }
 }
 
+// Add Azure Postgres DB
+module postgres 'core/db/flexible_postgres.bicep' = {
+  name: 'results-db'
+  scope: resourceGroup
+  params: {
+    administratorLogin: !empty(resultsDBAdminLogin) ? resultsDBAdminLogin : 'resultsadmin'
+    administratorLoginPassword: resultsDBAdminPassword
+    serverName: !empty(resultsDBServerName) ? resultsDBServerName : 'postgres-${resourceToken}'
+    haMode: 'Disabled'
+    serverEdition: 'Burstable'
+    dbInstanceType: 'Standard_B1ms'
+  }
+}
+
 // USER ROLES
 module openAiRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
   scope: openAiResourceGroup
@@ -193,7 +212,6 @@ module openAiRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
     principalType: 'User'
   }
 }
-
 
 module searchRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
   scope: searchServiceResourceGroup
@@ -271,3 +289,7 @@ output AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME string = searchConditionsIndexName
 output REDIS_HOST string = redisCache.outputs.host
 output REDIS_PORT int = redisCache.outputs.port
 output REDIS_PRIMARYKEY string = redisCache.outputs.primaryKey
+
+output POSTGRES_SERVER string = postgres.outputs.name
+output POSTGRES_SERVER_ADMIN_LOGIN string = resultsDBAdminLogin
+output POSTGRES_SERVER_ADMIN_PASSWORD string = resultsDBAdminPassword
