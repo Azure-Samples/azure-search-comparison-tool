@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS public.poc_results
 (
-    result_id integer NOT NULL,
+    result_id integer GENERATED ALWAYS AS IDENTITY,
     search_query character varying(256) COLLATE pg_catalog."default" NOT NULL,
     approach_code character varying(64) COLLATE pg_catalog."default" NOT NULL,
     ndcg numeric(21,20),
@@ -15,7 +15,7 @@ ALTER TABLE public.poc_results
 
 CREATE TABLE IF NOT EXISTS public.poc_actual_result_rankings
 (
-    actual_result_ranking_id integer NOT NULL,
+    actual_result_ranking_id integer GENERATED ALWAYS AS IDENTITY,
     result_id integer NOT NULL,
     rank integer NOT NULL,
     article_id character varying(128) COLLATE pg_catalog."default" NOT NULL,
@@ -35,7 +35,7 @@ ALTER TABLE public.poc_actual_result_rankings
 
 CREATE TABLE IF NOT EXISTS public.poc_ideal_result_rankings
 (
-    ideal_result_ranking_id integer NOT NULL,
+    ideal_result_ranking_id integer GENERATED ALWAYS AS IDENTITY,
     result_id integer NOT NULL,
     rank integer NOT NULL,
     article_id character varying(128) COLLATE pg_catalog."default" NOT NULL,
