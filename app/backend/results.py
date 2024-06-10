@@ -45,7 +45,7 @@ class Results:
                 "relevance": ideal_result["relevance"]
             }
 
-            db.one(query, params)
+            db.run(query, params)
 
         query = """
         INSERT INTO public.poc_actual_result_rankings (result_id, rank, article_id, relevance_score, azure_ai_score)
@@ -62,7 +62,7 @@ class Results:
                 "score": actual_result["score"]
             }
 
-            db.one(query, params)
+            db.run(query, params)
 
     def __connect(self):
         try:
