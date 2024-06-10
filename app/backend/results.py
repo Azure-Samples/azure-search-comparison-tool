@@ -15,6 +15,13 @@ class Results:
 
         db = self.__connect()
 
+        result_id = self.__add_result(db, search_query, approach, ndcg)
+
+        self.__add_ideal_results(db, result_id, ideal_results)
+        self.__add_actual_results(db, result_id, actual_results)    
+
+    def __add_result(self, db: Postgres, search_query: str, approach: str, ndcg: float) -> str:
+
         query = """
         INSERT INTO public.poc_results (search_query, approach_code, ndcg, search_time)
         VALUES(%(query)s, %(approach)s, %(ndcg)s, NOW())
@@ -31,6 +38,10 @@ class Results:
 
         self.logger.debug(result_id)
 
+        return result_id
+
+    def __add_ideal_results(self, db: Postgres, result_id: int, ideal_results: list):
+
         query = """
         INSERT INTO public.poc_ideal_result_rankings (result_id, rank, article_id, relevance_score)
         VALUES(%(r_id)s, %(rank)s, %(article)s, %(relevance)s);
@@ -46,6 +57,8 @@ class Results:
             }
 
             db.run(query, params)
+
+    def __add_actual_results(self, db: Postgres, result_id: int, actual_results: list):
 
         query = """
         INSERT INTO public.poc_actual_result_rankings (result_id, rank, article_id, relevance_score, azure_ai_score)
