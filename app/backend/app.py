@@ -11,6 +11,7 @@ from azure.identity.aio import DefaultAzureCredential
 from azure.search.documents.aio import SearchClient
 from azure.search.documents.indexes.aio import SearchIndexClient
 
+from results import Results
 from searchText import SearchText
 from indexSchema import IndexSchema
 
@@ -176,6 +177,10 @@ async def setup_clients():
     AZURE_SEARCH_TEXT_INDEX_NAME = os.getenv("AZURE_SEARCH_TEXT_INDEX_NAME")
     AZURE_SEARCH_CONDITIONS_INDEX_NAME = os.getenv("AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME")
 
+    POSTGRES_SERVER_NAME = os.getenv("POSTGRES_SERVER")
+    POSTGRES_USER = os.getenv("POSTGRES_SERVER_ADMIN_LOGIN")
+    POSTGRES_PASSWORD = os.getenv("POSTGRES_SERVER_ADMIN_PASSWORD")
+
     # Use the current user identity to authenticate with Azure OpenAI, Cognitive Search and AI Vision (no secrets needed, just use 'az login' locally, and managed identity when deployed on Azure).
     # If you need to use keys, use separate AzureKeyCredential instances with the keys for each service.
     # If you encounter a blocking error during a DefaultAzureCredential resolution, you can exclude the problematic credential by using a parameter (ex. exclude_shared_token_cache_credential=True).
@@ -201,6 +206,8 @@ async def setup_clients():
         credential=azure_credential,
     )
 
+    results = Results(POSTGRES_SERVER_NAME, POSTGRES_USER, POSTGRES_PASSWORD)
+
     # Store on app.config for later use inside requests
     current_app.config[CONFIG_OPENAI_SERVICE] = AZURE_OPENAI_SERVICE
     # current_app.config[CONFIG_OPENAI_TOKEN] = openai_token
@@ -208,9 +215,10 @@ async def setup_clients():
     current_app.config[CONFIG_OPENAI_CLIENT] = openai_client
     current_app.config[CONFIG_OPENAI_TOKEN_CREATED_TIME] = time.time()
     current_app.config[CONFIG_EMBEDDING_DEPLOYMENT] = AZURE_OPENAI_DEPLOYMENT_NAME
-    current_app.config[CONFIG_SEARCH_TEXT_INDEX] = SearchText(search_client_text)
+    current_app.config[CONFIG_SEARCH_TEXT_INDEX] = SearchText(search_client_text, results)
     current_app.config[CONFIG_SEARCH_CONDITIONS_INDEX] = SearchText(
-        search_client_conditions, 
+        search_client_conditions,
+        results,
         semantic_configuration_name="basic-semantic-config",
         vector_field_names="titleVector,descriptionVector")
     current_app.config[CONFIG_INDEX] = IndexSchema(index_client, AZURE_SEARCH_TEXT_INDEX_NAME)

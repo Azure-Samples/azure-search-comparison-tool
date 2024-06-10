@@ -3,10 +3,12 @@ from typing import Any
 from azure.search.documents.aio import SearchClient
 from azure.search.documents.models import QueryType, QueryCaptionType, QueryAnswerType, VectorizedQuery
 from ranking import Ranking
+from results import Results
 
 class SearchText:
     def __init__(self, 
                 search_client: SearchClient,
+                results: Results,
                 semantic_configuration_name="my-semantic-config",
                 vector_field_names="titleVector,contentVector"):
         self.search_client = search_client
@@ -14,6 +16,7 @@ class SearchText:
         self.vector_field_names = vector_field_names
         self.ranking = Ranking()
         self.logger = logging.getLogger(__name__)
+        self.results = results
 
         self.approach = {
              "text": "Text Only (BM25)",
@@ -132,12 +135,32 @@ class SearchText:
 
             ordered_result_ids = []
 
+            actual_results = []
+
             for result in results:
                 ordered_result_ids.append(result["id"])
+                actual_results.append({"id": result["id"], "score": result["@search.score"]})
                 
             ranking_result = self.ranking.rank_results(query, ordered_result_ids)
 
-            self.logger.info(f"{self.approach[approach]}  => NDCG:{ranking_result}")
+            self.logger.info(f"{self.approach[approach]}  => NDCG:{ranking_result["ndcg"]}")
+
+            for key, value in list(ranking_result["result_rankings"].items()):
+
+                result = next((item for item in actual_results if item.get("id") == key), None)
+
+                result["relevance"] = value
+
+                self.logger.debug(result)
+
+
+            ideal_results = []
+
+            for key, value in list(ranking_result["ideal_rankings"].items()):
+                print(f"{key}->{value}")
+                ideal_results.append({"id": key, "relevance": value})
+
+            self.results.add(query, approach, ranking_result["ndcg"], ideal_results, actual_results)
 
         return {
             "results": results,

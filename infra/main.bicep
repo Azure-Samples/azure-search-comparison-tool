@@ -26,7 +26,7 @@ param openAiResourceGroupName string = ''
 param openAiSkuName string // Set in main.parameters.json
 
 @description('Location for the OpenAI resource group')
-@allowed(['canadaeast', 'eastus', 'francecentral', 'japaneast', 'northcentralus', 'southcentralus', 'westeurope'])
+@allowed(['canadaeast', 'eastus', 'francecentral', 'uksouth', 'northcentralus', 'southcentralus', 'westeurope'])
 @metadata({
   azd: {
     type: 'location'
@@ -38,6 +38,10 @@ param embeddingDeploymentName string = 'embedding'
 param embeddingDeploymentCapacity int = 30
 param embeddingModelName string = 'text-embedding-ada-002'
 
+param largeEmbeddingDeploymentName string = 'embedding-large'
+param largeEmbeddingDeploymentCapacity int = 30
+param largeEmbeddingModelName string = 'text-embedding-3-large'
+
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
 
@@ -47,6 +51,11 @@ param createRoleForUser bool = true
 param redisCacheName string = ''
 param redisSkuName string = 'Basic'
 param redisSkuCapacity int = 1
+
+param resultsDBServerName string = ''
+param resultsDBAdminLogin string = ''
+@secure()
+param resultsDBAdminPassword string
 
 var abbrs = loadJsonContent('./abbreviations.json')
 
@@ -104,7 +113,7 @@ module openAi 'core/ai/aiservices.bicep' = {
   name: 'openai'
   scope: openAiResourceGroup
   params: {
-    name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}'
+    name: !empty(openAiServiceName) ? openAiServiceName : 'ai-${resourceToken}'
     location: openAiResourceGroupLocation
     tags: tags
     sku: {
@@ -119,6 +128,14 @@ module openAi 'core/ai/aiservices.bicep' = {
           version: '2'
         }
         capacity: embeddingDeploymentCapacity
+      },{
+        name: largeEmbeddingDeploymentName
+        model: {
+          format: 'OpenAI'
+          name: largeEmbeddingModelName
+          version: '1'
+        }
+        capacity: largeEmbeddingDeploymentCapacity
       }
     ]
   }
@@ -183,6 +200,20 @@ module redisCache 'core/cache/rediscache.bicep' = {
   }
 }
 
+// Add Azure Postgres DB
+module postgres 'core/db/flexible_postgres.bicep' = {
+  name: 'results-db'
+  scope: resourceGroup
+  params: {
+    administratorLogin: !empty(resultsDBAdminLogin) ? resultsDBAdminLogin : 'resultsadmin'
+    administratorLoginPassword: resultsDBAdminPassword
+    serverName: !empty(resultsDBServerName) ? resultsDBServerName : 'postgres-${resourceToken}'
+    haMode: 'Disabled'
+    serverEdition: 'Burstable'
+    dbInstanceType: 'Standard_B1ms'
+  }
+}
+
 // USER ROLES
 module openAiRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
   scope: openAiResourceGroup
@@ -193,7 +224,6 @@ module openAiRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
     principalType: 'User'
   }
 }
-
 
 module searchRoleUser 'core/security/role.bicep' = if (createRoleForUser) {
   scope: searchServiceResourceGroup
@@ -263,6 +293,7 @@ output AZURE_RESOURCE_GROUP string = resourceGroup.name
 
 output AZURE_OPENAI_SERVICE string = openAi.outputs.name
 output AZURE_OPENAI_DEPLOYMENT_NAME string = embeddingDeploymentName
+output AZURE_OPENAI_DEPLOYMENT_LARGE_NAME string = largeEmbeddingDeploymentName
 
 output AZURE_SEARCH_SERVICE_ENDPOINT string = searchService.outputs.endpoint
 output AZURE_SEARCH_TEXT_INDEX_NAME string = searchTextIndexName
@@ -271,3 +302,7 @@ output AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME string = searchConditionsIndexName
 output REDIS_HOST string = redisCache.outputs.host
 output REDIS_PORT int = redisCache.outputs.port
 output REDIS_PRIMARYKEY string = redisCache.outputs.primaryKey
+
+output POSTGRES_SERVER string = postgres.outputs.name
+output POSTGRES_SERVER_ADMIN_LOGIN string = resultsDBAdminLogin
+output POSTGRES_SERVER_ADMIN_PASSWORD string = resultsDBAdminPassword

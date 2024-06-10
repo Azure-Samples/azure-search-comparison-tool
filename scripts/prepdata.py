@@ -5,11 +5,13 @@ import json
 import random
 import string
 import time
+from urllib.parse import quote_plus
 import uuid
 import redis
+import logging
 
 from openai import AzureOpenAI
-from tenacity import retry, wait_random_exponential, stop_after_attempt
+#from tenacity import retry, wait_random_exponential, stop_after_attempt
 from azure.identity import DefaultAzureCredential
 from azure.search.documents import SearchClient
 from azure.search.documents.indexes import SearchIndexClient
@@ -28,11 +30,11 @@ from azure.search.documents.indexes.models import (
     VectorSearchProfile,
     HnswAlgorithmConfiguration,
 )
+from postgres import Postgres
 
 AZURE_OPENAI_SERVICE = os.environ.get("AZURE_OPENAI_SERVICE")
-AZURE_OPENAI_DEPLOYMENT_NAME = (
-    os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME") or "embedding"
-)
+AZURE_OPENAI_DEPLOYMENT_NAME = os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME")
+AZURE_OPENAI_DEPLOYMENT_LARGE_NAME = os.environ.get("AZURE_OPENAI_DEPLOYMENT_LARGE_NAME")
 AZURE_SEARCH_SERVICE_ENDPOINT = os.environ.get("AZURE_SEARCH_SERVICE_ENDPOINT")
 AZURE_SEARCH_TEXT_INDEX_NAME = os.environ.get("AZURE_SEARCH_TEXT_INDEX_NAME")
 AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME = os.environ.get("AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME")
@@ -40,6 +42,10 @@ AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME = os.environ.get("AZURE_SEARCH_NHS_CONDIT
 REDIS_HOST = os.environ.get("REDIS_HOST")
 REDIS_PORT = os.environ.get("REDIS_PORT")
 REDIS_PASSWORD = os.environ.get("REDIS_PRIMARYKEY")
+
+POSTGRES_SERVER_NAME = os.environ.get("POSTGRES_SERVER")
+POSTGRES_SERVER_ADMIN_NAME = os.environ.get("POSTGRES_SERVER_ADMIN_LOGIN")
+POSTGRES_SERVER_ADMIN_PASSWORD = os.environ.get("POSTGRES_SERVER_ADMIN_PASSWORD")
 
 open_ai_token_cache = {}
 CACHE_KEY_TOKEN_CRED = "openai_token_cred"
@@ -316,6 +322,21 @@ def get_openai_key():
 
     return openai_token.token
 
+def publish_results_db_schema():
+
+    print('Ensuring postgres results db schema exists')
+
+    try:
+        db = Postgres(f"postgresql://{POSTGRES_SERVER_ADMIN_NAME}:{quote_plus(POSTGRES_SERVER_ADMIN_PASSWORD)}@{POSTGRES_SERVER_NAME}.postgres.database.azure.com:5432/postgres?sslmode=require")
+
+        sql_file = open('./scripts/results_schema.sql','r')
+
+        with db.get_cursor() as cursor:
+            cursor.execute(sql_file.read())
+
+    except Exception as e:
+        logging.exception(str(e))
+    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -333,6 +354,9 @@ if __name__ == "__main__":
     azure_credential = DefaultAzureCredential(
         exclude_shared_token_cache_credential=True
     )
+
+    # Create result db schema
+    publish_results_db_schema()
 
     # Create text index
     if args.recreate:
