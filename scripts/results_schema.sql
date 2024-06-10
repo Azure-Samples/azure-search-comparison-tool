@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS public.poc_results
     search_query character varying(256) COLLATE pg_catalog."default" NOT NULL,
     approach_code character varying(64) COLLATE pg_catalog."default" NOT NULL,
     ndcg numeric(21,20),
-    search_time timestamp,
+    search_time timestamp NOT NULL,
     CONSTRAINT poc_results_pkey PRIMARY KEY (result_id)
 )
 

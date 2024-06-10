@@ -131,37 +131,57 @@ class SearchText:
 
                 self.logger.debug(f"{r["@search.score"]} - {r["id"]}")
 
-        if can_calc_ncdg and data_set == "conditions":
+        if data_set == "conditions":
 
-            ordered_result_ids = []
-
-            actual_results = []
-
-            for result in results:
-                ordered_result_ids.append(result["id"])
-                actual_results.append({"id": result["id"], "score": result["@search.score"]})
-                
-            ranking_result = self.ranking.rank_results(query, ordered_result_ids)
-
-            self.logger.info(f"{self.approach[approach]}  => NDCG:{ranking_result["ndcg"]}")
-
-            for key, value in list(ranking_result["result_rankings"].items()):
-
-                result = next((item for item in actual_results if item.get("id") == key), None)
-
-                result["relevance"] = value
-
-                self.logger.debug(result)
-
-
-            ideal_results = []
-
-            for key, value in list(ranking_result["ideal_rankings"].items()):
-                print(f"{key}->{value}")
-                ideal_results.append({"id": key, "relevance": value})
-
-            self.results.add(query, approach, ranking_result["ndcg"], ideal_results, actual_results)
+            if can_calc_ncdg:
+                self.evaluate_well_known_search_query(query, approach, results)
+            else:
+                self.store_query_results(query, approach, results)
 
         return {
             "results": results,
         }
+    
+    def store_query_results(self, query: str, approach: str, results: list):
+
+        actual_results = []
+
+        for result in results:
+            actual_results.append(
+                {
+                    "id": result["id"],
+                    "score": result["@search.score"],
+                    "relevance": 0
+                })
+        
+        self.results.persist_results(query, approach, actual_results)
+        
+    
+    def evaluate_well_known_search_query(self, query: str, approach: str, results: list):
+        ordered_result_ids = []
+
+        actual_results = []
+
+        for result in results:
+            ordered_result_ids.append(result["id"])
+            actual_results.append({"id": result["id"], "score": result["@search.score"]})
+            
+        ranking_result = self.ranking.rank_results(query, ordered_result_ids)
+
+        self.logger.info(f"{self.approach[approach]}  => NDCG:{ranking_result["ndcg"]}")
+
+        for key, value in list(ranking_result["result_rankings"].items()):
+
+            result = next((item for item in actual_results if item.get("id") == key), None)
+
+            result["relevance"] = value
+
+            self.logger.debug(result)
+
+        ideal_results = []
+
+        for key, value in list(ranking_result["ideal_rankings"].items()):
+            print(f"{key}->{value}")
+            ideal_results.append({"id": key, "relevance": value})
+
+        self.results.persist_ranked_results(query, approach, ranking_result["ndcg"], ideal_results, actual_results)

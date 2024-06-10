@@ -11,14 +11,28 @@ class Results:
         self.userName = userName
         self.password = password
 
-    def add(self, search_query: str, approach: str, ndcg, ideal_results, actual_results):
+    def persist_ranked_results(self, search_query: str, approach: str, ndcg: float, ideal_results: list, actual_results: list):
+        """
+        Persist a set of search results with NDCG and associated ideal result rankings
+        """
 
         db = self.__connect()
 
         result_id = self.__add_result(db, search_query, approach, ndcg)
 
         self.__add_ideal_results(db, result_id, ideal_results)
-        self.__add_actual_results(db, result_id, actual_results)    
+        self.__add_actual_results(db, result_id, actual_results)
+
+    def persist_results(self, search_query: str, approach: str, actual_results: list):
+        """
+        Persist a set of search results without NDCG and associated ideal result rankings
+        """
+
+        db = self.__connect()
+        
+        result_id = self.__add_result(db, search_query, approach, None)
+
+        self.__add_actual_results(db, result_id, actual_results)
 
     def __add_result(self, db: Postgres, search_query: str, approach: str, ndcg: float) -> str:
 
@@ -26,13 +40,19 @@ class Results:
         INSERT INTO public.poc_results (search_query, approach_code, ndcg, search_time)
         VALUES(%(query)s, %(approach)s, %(ndcg)s, NOW())
         RETURNING result_id;
+        """ if ndcg != None else """
+        INSERT INTO public.poc_results (search_query, approach_code, search_time)
+        VALUES(%(query)s, %(approach)s, NOW())
+        RETURNING result_id;
         """
         
         params = {
             "query": search_query,
-            "approach": approach,
-            "ndcg": ndcg
+            "approach": approach
         }
+
+        if ndcg != None:
+            params["ndcg"] = ndcg
 
         result_id = db.one(query, params)
 
