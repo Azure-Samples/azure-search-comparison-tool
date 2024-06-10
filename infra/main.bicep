@@ -26,7 +26,7 @@ param openAiResourceGroupName string = ''
 param openAiSkuName string // Set in main.parameters.json
 
 @description('Location for the OpenAI resource group')
-@allowed(['canadaeast', 'eastus', 'francecentral', 'japaneast', 'northcentralus', 'southcentralus', 'westeurope'])
+@allowed(['canadaeast', 'eastus', 'francecentral', 'uksouth', 'northcentralus', 'southcentralus', 'westeurope'])
 @metadata({
   azd: {
     type: 'location'
@@ -37,6 +37,10 @@ param openAiResourceGroupLocation string
 param embeddingDeploymentName string = 'embedding'
 param embeddingDeploymentCapacity int = 30
 param embeddingModelName string = 'text-embedding-ada-002'
+
+param largeEmbeddingDeploymentName string = 'embedding-large'
+param largeEmbeddingDeploymentCapacity int = 30
+param largeEmbeddingModelName string = 'text-embedding-3-large'
 
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
@@ -109,7 +113,7 @@ module openAi 'core/ai/aiservices.bicep' = {
   name: 'openai'
   scope: openAiResourceGroup
   params: {
-    name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}'
+    name: !empty(openAiServiceName) ? openAiServiceName : 'ai-${resourceToken}'
     location: openAiResourceGroupLocation
     tags: tags
     sku: {
@@ -124,6 +128,14 @@ module openAi 'core/ai/aiservices.bicep' = {
           version: '2'
         }
         capacity: embeddingDeploymentCapacity
+      },{
+        name: largeEmbeddingDeploymentName
+        model: {
+          format: 'OpenAI'
+          name: largeEmbeddingModelName
+          version: '1'
+        }
+        capacity: largeEmbeddingDeploymentCapacity
       }
     ]
   }
@@ -281,6 +293,7 @@ output AZURE_RESOURCE_GROUP string = resourceGroup.name
 
 output AZURE_OPENAI_SERVICE string = openAi.outputs.name
 output AZURE_OPENAI_DEPLOYMENT_NAME string = embeddingDeploymentName
+output AZURE_OPENAI_DEPLOYMENT_LARGE_NAME string = largeEmbeddingDeploymentName
 
 output AZURE_SEARCH_SERVICE_ENDPOINT string = searchService.outputs.endpoint
 output AZURE_SEARCH_TEXT_INDEX_NAME string = searchTextIndexName
