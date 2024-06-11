@@ -52,4 +52,28 @@ TABLESPACE pg_default;
 ALTER TABLE public.poc_ideal_result_rankings
     OWNER to resultsadmin;
 
+CREATE OR REPLACE VIEW public.poc_ndcg_rankings
+AS
+SELECT DISTINCT lower(search_query) as search_query, approach_code, ndcg
+FROM public.poc_results
+WHERE ndcg IS NOT NULL
+ORDER BY lower(search_query), ndcg DESC, approach_code;
 
+
+CREATE OR REPLACE VIEW public.poc_ranked_results
+AS
+SELECT
+    R.result_id,
+    R.search_query,
+    R.approach_code,
+    R.ndcg,
+    ARR.rank,
+    ARR.article_id,
+    CAST(ARR.relevance_score AS NUMERIC(6, 3)) as relevance,
+    ARR.azure_ai_score,
+    IRR.article_id as expected_article_id,
+    CAST(IRR.relevance_score AS NUMERIC(6, 3)) as expected_relevance
+FROM public.poc_results R
+    JOIN public.poc_actual_result_rankings ARR ON R.result_id = ARR.result_id
+    LEFT JOIN public.poc_ideal_result_rankings IRR ON R.result_id = IRR.result_id AND IRR.rank = ARR.rank
+ORDER BY R.result_id DESC, ARR.rank;

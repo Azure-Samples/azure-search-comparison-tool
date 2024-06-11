@@ -4,15 +4,19 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs, quote_plus
 from results import Results
+from ranking import Ranking
 
 class AlgoliaSiteSearch:
 
     def __init__(self, results: Results):
 
         self.logger = logging.getLogger(__name__)
+        self.ranking = Ranking()
         self.results = results
 
     def search(self, query: str) -> list:
+
+        can_calc_ncdg = self.ranking.hasIdealRanking(query)
 
         url = f"https://www.nhs.uk/search/results?q={quote_plus(query)}"
 
@@ -27,7 +31,10 @@ class AlgoliaSiteSearch:
 
             self.logger.info("Found %s results for %s", len(results), query)
 
-            # self.results.persist_results(query, "algolia", results)
+            if can_calc_ncdg:
+                self.evaluate_well_known_search_query(query, results)
+            else:
+                self.results.persist_results(query, "algolia", results)
 
             return results
 
@@ -35,6 +42,35 @@ class AlgoliaSiteSearch:
             self.logger.error(f"Failed to retrieve search results: {response.status_code}")
 
         return None
+    
+    def evaluate_well_known_search_query(self, query: str, results: list):
+        ordered_result_ids = []
+
+        actual_results = []
+
+        for result in results:
+            ordered_result_ids.append(result["id"])
+            actual_results.append({"id": result["id"], "score": 0})
+            
+        ranking_result = self.ranking.rank_results(query, ordered_result_ids)
+
+        self.logger.info(f"Algolia  => NDCG:{ranking_result["ndcg"]}")
+
+        for key, value in list(ranking_result["result_rankings"].items()):
+
+            result = next((item for item in actual_results if item.get("id") == key), None)
+
+            result["relevance"] = value
+
+            self.logger.debug(result)
+
+        ideal_results = []
+
+        for key, value in list(ranking_result["ideal_rankings"].items()):
+            print(f"{key}->{value}")
+            ideal_results.append({"id": key, "relevance": value})
+
+        self.results.persist_ranked_results(query, "algolia", ranking_result["ndcg"], ideal_results, actual_results)
 
 
     def __process_search_results(self, results_html: str) -> list:
