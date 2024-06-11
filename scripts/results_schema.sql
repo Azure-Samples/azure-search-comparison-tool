@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS public.poc_results
     search_query character varying(256) COLLATE pg_catalog."default" NOT NULL,
     approach_code character varying(64) COLLATE pg_catalog."default" NOT NULL,
     ndcg numeric(21,20),
-    search_time timestamp NOT NULL,
+    search_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT poc_results_pkey PRIMARY KEY (result_id)
 )
 
@@ -82,4 +82,60 @@ FROM public.poc_results R
 ORDER BY R.result_id DESC, ARR.rank;
 
 ALTER TABLE public.poc_ranked_results
+    OWNER TO resultsadmin;
+
+CREATE OR REPLACE FUNCTION public.poc_compare_search_query_results(search_query TEXT)
+RETURNS TABLE(
+    rank INT,
+    vec_article_id TEXT,
+    vec_relevance NUMERIC(6, 3),
+    text_article_id TEXT,
+    text_relevance NUMERIC(6, 3),
+    algolia_article_id TEXT,
+    algolia_relevance NUMERIC(6, 3)
+)
+AS $$
+    WITH vec_result AS (
+        SELECT R.result_id
+        FROM public.poc_results R
+        WHERE lower(R.search_query) = lower($1) AND R.approach_code = 'vec'
+        ORDER BY R.search_time DESC
+        LIMIT 1),
+    text_result AS (
+        SELECT R.result_id
+        FROM public.poc_results R
+        WHERE lower(R.search_query) = lower($1) AND R.approach_code = 'text'
+        ORDER BY R.search_time DESC
+        LIMIT 1),
+    algolia_result AS (
+        SELECT R.result_id
+        FROM public.poc_results R
+        WHERE lower(R.search_query) = lower($1) AND R.approach_code = 'algolia'
+        ORDER BY R.search_time DESC
+        LIMIT 1)
+    SELECT 
+        VEC_ARR.rank,
+        VEC_ARR.article_id as vec_article_id,
+        CAST(VEC_ARR.relevance_score AS NUMERIC(6, 3)) AS vec_relevance,
+        TEXT_ARR.article_id as text_article_id,
+        CAST(TEXT_ARR.relevance_score AS NUMERIC(6, 3)) as text_relevance,
+        ALG_ARR.article_id as algolia_article_id,
+        CAST(ALG_ARR.relevance_score AS NUMERIC(6, 3)) as algolia_relevance
+    FROM
+        public.poc_actual_result_rankings VEC_ARR,
+        vec_result VEC_R,
+        public.poc_actual_result_rankings TEXT_ARR,
+        text_result TEXT_R,
+        public.poc_actual_result_rankings ALG_ARR,
+        algolia_result ALG_R
+    WHERE VEC_ARR.result_id = VEC_R.result_id
+    AND TEXT_ARR.result_id = TEXT_R.result_id
+    AND ALG_ARR.result_id = ALG_R.result_id
+    AND VEC_ARR.rank = TEXT_ARR.rank
+    AND VEC_ARR.rank = ALG_ARR.rank
+    ORDER BY VEC_ARR.rank;
+$$
+LANGUAGE SQL;
+
+ALTER FUNCTION public.poc_compare_search_query_results(search_query text)
     OWNER TO resultsadmin;
