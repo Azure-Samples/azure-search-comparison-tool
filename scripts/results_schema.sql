@@ -59,6 +59,9 @@ FROM public.poc_results
 WHERE ndcg IS NOT NULL
 ORDER BY lower(search_query), ndcg DESC, approach_code;
 
+ALTER TABLE public.poc_ndcg_rankings
+    OWNER TO resultsadmin;
+
 
 CREATE OR REPLACE VIEW public.poc_ranked_results
 AS
@@ -77,3 +80,6 @@ FROM public.poc_results R
     JOIN public.poc_actual_result_rankings ARR ON R.result_id = ARR.result_id
     LEFT JOIN public.poc_ideal_result_rankings IRR ON R.result_id = IRR.result_id AND IRR.rank = ARR.rank
 ORDER BY R.result_id DESC, ARR.rank;
+
+ALTER TABLE public.poc_ranked_results
+    OWNER TO resultsadmin;
