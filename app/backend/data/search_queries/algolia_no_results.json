@@ -1,0 +1,92 @@
+[
+    {
+        "query": "ozempic",
+        "rankings": [
+            {
+                "id": "unknown",
+                "relevance": 0.01
+            }
+        ]
+    },
+    {
+        "query": "paronychia",
+        "rankings": [
+            {
+                "id": "unknown",
+                "relevance": 0.01
+            }
+        ]
+    },
+    {
+        "query": "famotidine",
+        "rankings": [
+            {
+                "id": "unknown",
+                "relevance": 0.01
+            }
+        ]
+    },
+    {
+        "query": "cryptosporidium",
+        "rankings": [
+            {
+                "id": "unknown",
+                "relevance": 0.01
+            }
+        ]
+    },
+    {
+        "query": "podiatry",
+        "rankings": [
+            {
+                "id": "unknown",
+                "relevance": 0.01
+            }
+        ]
+    },
+    {
+        "query": "gastroenteritis",
+        "rankings": [
+            {
+                "id": "unknown",
+                "relevance": 0.01
+            }
+        ]
+    },
+    {
+        "query": "wegovy",
+        "rankings": [
+            {
+                "id": "unknown",
+                "relevance": 0.01
+            }
+        ]
+    },
+    {
+        "query": "semaglutide",
+        "rankings": [
+            {
+                "id": "unknown",
+                "relevance": 0.01
+            }
+        ]
+    },
+    {
+        "query": "bradycardia",
+        "rankings": [
+            {
+                "id": "unknown",
+                "relevance": 0.01
+            }
+        ]
+    },
+    {
+        "query": "myocarditis",
+        "rankings": [
+            {
+                "id": "unknown",
+                "relevance": 0.01
+            }
+        ]
+    }
+]

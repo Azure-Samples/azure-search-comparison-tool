@@ -14,6 +14,7 @@ from azure.search.documents.indexes.aio import SearchIndexClient
 from results import Results
 from searchText import SearchText
 from indexSchema import IndexSchema
+from nhsSearch import AlgoliaSiteSearch
 
 # config keys
 CONFIG_OPENAI_SERVICE = "openai_service"
@@ -25,6 +26,7 @@ CONFIG_SEARCH_TEXT_INDEX = "search_text"
 CONFIG_SEARCH_CONDITIONS_INDEX = "search_conditions"
 CONFIG_INDEX = "index"
 CONFIG_INDEX_CONDITIONS = "index_conditions"
+CONFIG_ALGOLIA_SEARCH = "algolia_search"
 
 dataSetConfigDict = {
      "sample": CONFIG_SEARCH_TEXT_INDEX,
@@ -65,47 +67,58 @@ async def search_text():
     try:
         request_json = await request.get_json()
 
-        vector_search = (
-            request_json["vectorSearch"] if request_json.get("vectorSearch") else False
-        )
-        hybrid_search = (
-            request_json["hybridSearch"] if request_json.get("hybridSearch") else False
-        )
-        select = request_json["select"] if request_json.get("select") else None
-        k = request_json["k"] if request_json.get("k") else 10
-        filter = request_json["filter"] if request_json.get("filter") else None
-        use_semantic_ranker = (
-            request_json["useSemanticRanker"]
-            if request_json.get("useSemanticRanker")
-            else False
-        )
-        use_semantic_captions = (
-            request_json["useSemanticCaptions"]
-            if request_json.get("useSemanticCaptions")
-            else False
-        )
-        query_vector = (
-            request_json["queryVector"] if request_json.get("queryVector") else None
-        )
+        approach = request_json["approach"]
+        query = request_json["query"]
 
-        data_set = request_json["dataSet"] if request_json.get("dataSet") else "sample"
-        indexConfig = dataSetConfigDict[data_set]
+        if approach == "algolia":
 
-        r = await current_app.config[indexConfig].search(
-            query=request_json["query"],
-            use_vector_search=vector_search,
-            use_hybrid_search=hybrid_search,
-            use_semantic_ranker=use_semantic_ranker,
-            use_semantic_captions=use_semantic_captions,
-            select=select,
-            k=k,
-            filter=filter,
-            query_vector=query_vector,
-            data_set=data_set,
-            approach=request_json["approach"]
-        )
+            r = current_app.config[CONFIG_ALGOLIA_SEARCH].search(query)
 
-        return jsonify(r), 200
+            return jsonify(r), 200
+
+        else:
+
+            vector_search = (
+                request_json["vectorSearch"] if request_json.get("vectorSearch") else False
+            )
+            hybrid_search = (
+                request_json["hybridSearch"] if request_json.get("hybridSearch") else False
+            )
+            select = request_json["select"] if request_json.get("select") else None
+            k = request_json["k"] if request_json.get("k") else 10
+            filter = request_json["filter"] if request_json.get("filter") else None
+            use_semantic_ranker = (
+                request_json["useSemanticRanker"]
+                if request_json.get("useSemanticRanker")
+                else False
+            )
+            use_semantic_captions = (
+                request_json["useSemanticCaptions"]
+                if request_json.get("useSemanticCaptions")
+                else False
+            )
+            query_vector = (
+                request_json["queryVector"] if request_json.get("queryVector") else None
+            )
+
+            data_set = request_json["dataSet"] if request_json.get("dataSet") else "sample"
+            indexConfig = dataSetConfigDict[data_set]
+
+            r = await current_app.config[indexConfig].search(
+                query=query,
+                use_vector_search=vector_search,
+                use_hybrid_search=hybrid_search,
+                use_semantic_ranker=use_semantic_ranker,
+                use_semantic_captions=use_semantic_captions,
+                select=select,
+                k=k,
+                filter=filter,
+                query_vector=query_vector,
+                data_set=data_set,
+                approach=approach
+            )
+
+            return jsonify(r), 200
     except Exception as e:
         logging.exception("Exception in /searchText")
         return jsonify({"error": str(e)}), 500
@@ -165,7 +178,6 @@ async def gzip_response(response):
 
     return response
 
-
 @bp.before_app_serving
 async def setup_clients():
     # Replace these with your own values, either in environment variables or directly here
@@ -215,6 +227,7 @@ async def setup_clients():
     current_app.config[CONFIG_OPENAI_CLIENT] = openai_client
     current_app.config[CONFIG_OPENAI_TOKEN_CREATED_TIME] = time.time()
     current_app.config[CONFIG_EMBEDDING_DEPLOYMENT] = AZURE_OPENAI_DEPLOYMENT_NAME
+    current_app.config[CONFIG_ALGOLIA_SEARCH] = AlgoliaSiteSearch(results)
     current_app.config[CONFIG_SEARCH_TEXT_INDEX] = SearchText(search_client_text, results)
     current_app.config[CONFIG_SEARCH_CONDITIONS_INDEX] = SearchText(
         search_client_conditions,
