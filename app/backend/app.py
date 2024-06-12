@@ -9,11 +9,9 @@ from io import BytesIO
 from quart import Quart, request, jsonify, Blueprint, current_app
 from azure.identity.aio import DefaultAzureCredential
 from azure.search.documents.aio import SearchClient
-from azure.search.documents.indexes.aio import SearchIndexClient
 
 from results import Results
 from searchText import SearchText
-from indexSchema import IndexSchema
 
 # config keys
 CONFIG_OPENAI_SERVICE = "openai_service"
@@ -21,14 +19,12 @@ CONFIG_OPENAI_CLIENT = "openai_client"
 CONFIG_OPENAI_TOKEN_CREATED_TIME = "openai_token_created_at"
 CONFIG_CREDENTIAL = "azure_credential"
 CONFIG_EMBEDDING_DEPLOYMENT = "embedding_deployment"
-CONFIG_SEARCH_TEXT_INDEX = "search_text"
 CONFIG_SEARCH_CONDITIONS_INDEX = "search_conditions"
-CONFIG_INDEX = "index"
-CONFIG_INDEX_CONDITIONS = "index_conditions"
+CONFIG_SEARCH_COMBINED_INDEX = "search_combined"
 
 dataSetConfigDict = {
-     "sample": CONFIG_SEARCH_TEXT_INDEX,
-     "conditions": CONFIG_SEARCH_CONDITIONS_INDEX
+     "conditions": CONFIG_SEARCH_CONDITIONS_INDEX,
+     "combined": CONFIG_SEARCH_COMBINED_INDEX
 }
 
 bp = Blueprint("routes", __name__, static_folder="static")
@@ -110,28 +106,6 @@ async def search_text():
         logging.exception("Exception in /searchText")
         return jsonify({"error": str(e)}), 500
 
-
-@bp.route("/getEfSearch", methods=["GET"])
-async def get_efsearch():
-    try:
-        ef_search = await current_app.config[CONFIG_INDEX].get_efsearch()
-        return str(ef_search), 200
-    except Exception as e:
-        logging.exception("Exception in /getEfSearch")
-        return jsonify({"error": str(e)}), 500
-
-@bp.route("/updateEfSearch", methods=["POST"])
-async def update_efsearch():
-    try:
-        request_json = await request.get_json()
-        newValue = request_json["efSearch"] if request_json.get("efSearch") else None
-        await current_app.config[CONFIG_INDEX_CONDITIONS].update_efsearch(int(newValue))
-        ef_search = await current_app.config[CONFIG_INDEX].update_efsearch(int(newValue))
-        return str(ef_search), 200
-    except Exception as e:
-        logging.exception("Exception in /updateEfSearch")
-        return jsonify({"error": str(e)}), 500
-
 @bp.before_request
 async def ensure_openai_token():
 
@@ -174,8 +148,8 @@ async def setup_clients():
         os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME") or "embedding"
     )
     AZURE_SEARCH_SERVICE_ENDPOINT = os.getenv("AZURE_SEARCH_SERVICE_ENDPOINT")
-    AZURE_SEARCH_TEXT_INDEX_NAME = os.getenv("AZURE_SEARCH_TEXT_INDEX_NAME")
     AZURE_SEARCH_CONDITIONS_INDEX_NAME = os.getenv("AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME")
+    AZURE_SEARCH_COMBINED_INDEX_NAME = os.getenv("AZURE_SEARCH_NHS_COMBINED_INDEX_NAME")
 
     POSTGRES_SERVER_NAME = os.getenv("POSTGRES_SERVER")
     POSTGRES_USER = os.getenv("POSTGRES_SERVER_ADMIN_LOGIN")
@@ -191,18 +165,15 @@ async def setup_clients():
     openai_client = await get_openai_client(azure_credential, AZURE_OPENAI_SERVICE)
 
     # Set up clients for Cognitive Search
-    search_client_text = SearchClient(
-        endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
-        index_name=AZURE_SEARCH_TEXT_INDEX_NAME,
-        credential=azure_credential,
-    )
     search_client_conditions = SearchClient(
         endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
         index_name=AZURE_SEARCH_CONDITIONS_INDEX_NAME,
         credential=azure_credential,
     )
-    index_client = SearchIndexClient(
+
+    search_client_combined = SearchClient(
         endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
+        index_name=AZURE_SEARCH_COMBINED_INDEX_NAME,
         credential=azure_credential,
     )
 
@@ -215,14 +186,16 @@ async def setup_clients():
     current_app.config[CONFIG_OPENAI_CLIENT] = openai_client
     current_app.config[CONFIG_OPENAI_TOKEN_CREATED_TIME] = time.time()
     current_app.config[CONFIG_EMBEDDING_DEPLOYMENT] = AZURE_OPENAI_DEPLOYMENT_NAME
-    current_app.config[CONFIG_SEARCH_TEXT_INDEX] = SearchText(search_client_text, results)
     current_app.config[CONFIG_SEARCH_CONDITIONS_INDEX] = SearchText(
         search_client_conditions,
         results,
         semantic_configuration_name="basic-semantic-config",
         vector_field_names="titleVector,descriptionVector")
-    current_app.config[CONFIG_INDEX] = IndexSchema(index_client, AZURE_SEARCH_TEXT_INDEX_NAME)
-    current_app.config[CONFIG_INDEX_CONDITIONS] = IndexSchema(index_client, AZURE_SEARCH_CONDITIONS_INDEX_NAME)
+    current_app.config[CONFIG_SEARCH_COMBINED_INDEX] = SearchText(
+        search_client_combined,
+        results,
+        semantic_configuration_name="basic-semantic-config",
+        vector_field_names="title_vector,description_vector,short_descriptions_vector,content_vector")
 
 def create_app():
     app = Quart(__name__)

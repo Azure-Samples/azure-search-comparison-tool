@@ -71,4 +71,4 @@ class Results:
         except Exception as e:
             self.logger.error(str(e))
 
-        return None
+            raise e
