@@ -54,5 +54,10 @@
             "titleVector",
             "descriptionVector"
         ]
+    },
+    {
+        "key": "algolia",
+        "title": "Algolia",
+        "description": "This approach scrapes the NHS.UK site performing the required search query in this way exposing the top 10 Algolia search results for comparison purposes"
     }
 ]
