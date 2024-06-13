@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Checkbox, DefaultButton, Dropdown, IDropdownOption, MessageBar, MessageBarType, Panel, Spinner, Stack, TextField, Toggle } from "@fluentui/react";
 import { DismissCircle24Filled, Search24Regular, Settings20Regular } from "@fluentui/react-icons";
 
@@ -8,7 +8,6 @@ import { TextSearchResult, Approach, ResultCard, ApproachKey, AxiosErrorResponse
 import { getEmbeddings, getTextSearchResults } from "../../api/textSearch";
 import SampleCard from "../../components/SampleCards";
 import { AxiosError } from "axios";
-import { getEfSearch, updateEfSearch } from "../../api/indexSchema";
 
 const MaxSelectedModes = 4;
 
@@ -22,10 +21,7 @@ const Vector: React.FC = () => {
     const [useSemanticCaptions, setUseSemanticCaptions] = useState<boolean>(false);
     const [hideScores, setHideScores] = React.useState<boolean>(true);
     const [errors, setErrors] = React.useState<string[]>([]);
-    const [efSearchInSchema, setEfSearchInSchema] = React.useState<string>("");
-    const [efSearch, setEfSearch] = React.useState<string>("");
-    const [validationError, setValidationError] = React.useState<string>("");
-    const [selectedDatasetKey, setSelectedDatasetKey] = React.useState<string>("sample");
+    const [selectedDatasetKey, setSelectedDatasetKey] = React.useState<string>("conditions");
 
     const approaches: Approach[] = useMemo(
         () => [
@@ -39,37 +35,18 @@ const Vector: React.FC = () => {
 
     const Datasets: IDropdownOption[] = useMemo(
         () => [
-            { key: "sample", text: "Azure Services", title: "Sample text data" },
-            { key: "conditions", text: "NHSUK Conditions", title: "Short conditions articles" }
+            { key: "conditions", text: "NHSUK Conditions", title: "Short conditions articles" },
+            { key: "combined", text: "NHSUK Combined Conditions & Medicines", title: "Conditions & Medicines documents" }
         ],
         []
     );
 
     let sampleQueries: string[] = [];
-    if (selectedDatasetKey === "sample") {
-        sampleQueries = ["tools for software development", "herramientas para el desarrollo de software", "scalable storage solution"];
+    if (selectedDatasetKey === "combined") {
+        sampleQueries = ["acupuncture", "alendronic acid", "side effects"];
     } else if (selectedDatasetKey === "conditions") {
         sampleQueries = ["heart attack", "cancer", "ADHD"];
     }
-
-    useEffect(() => {
-        if (searchQuery === "") {
-            setResultCards([]);
-        }
-
-        if (efSearchInSchema === "") {
-            const getEfSearchInSchema = async () => {
-                try {
-                    const currentEfSearch = await getEfSearch();
-                    setEfSearchInSchema(currentEfSearch);
-                    setEfSearch(currentEfSearch);
-                } catch (e) {
-                    setErrors([`Failed to get efSearch value ${String(e)}`]);
-                }
-            };
-            void getEfSearchInSchema();
-        }
-    }, [efSearch, efSearchInSchema, searchQuery]);
 
     const executeSearch = useCallback(
         async (query: string) => {
@@ -89,18 +66,6 @@ const Vector: React.FC = () => {
             let resultsList: ResultCard[] = [];
             let searchErrors: string[] = [];
             let queryVector: number[] = [];
-
-            if (Number(efSearch) !== Number(efSearchInSchema)) {
-                try {
-                    const newEfSearch = await updateEfSearch(efSearch);
-                    setEfSearchInSchema(newEfSearch);
-                } catch (e) {
-                    searchErrors = searchErrors.concat(`Failed to update efSearch value ${String(e)}`);
-                    setErrors(searchErrors);
-                    setLoading(false);
-                    return;
-                }
-            }
 
             if (!(searchApproachKeys.length === 1 && searchApproachKeys[0] === "text")) {
                 try {
@@ -142,7 +107,7 @@ const Vector: React.FC = () => {
                     setLoading(false);
                 });
         },
-        [selectedApproachKeys, efSearch, efSearchInSchema, useSemanticCaptions, selectedDatasetKey]
+        [selectedApproachKeys, useSemanticCaptions, selectedDatasetKey]
     );
 
     const handleOnKeyDown = useCallback(
@@ -179,22 +144,9 @@ const Vector: React.FC = () => {
         setUseSemanticCaptions(!!checked);
     }, []);
 
-    const onEfSearchChanged = React.useCallback(
-        (event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, value?: string) => {
-            const numberValue = Number(value);
-            if (!!value && isNaN(numberValue)) {
-                event.preventDefault();
-            } else {
-                setEfSearch(value ?? efSearchInSchema);
-                numberValue > 1000 || numberValue < 100 ? setValidationError("The allowable range is 100 to 1000.") : setValidationError("");
-            }
-        },
-        [efSearchInSchema]
-    );
-
     const onDatasetChange = React.useCallback((_event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption): void => {
         setResultCards([]);
-        setSelectedDatasetKey(String(item?.key) ?? "sample");
+        setSelectedDatasetKey(String(item?.key) ?? "conditions");
     }, []);
 
     return (
@@ -242,7 +194,7 @@ const Vector: React.FC = () => {
                                                 <Stack horizontal horizontalAlign="space-between">
                                                     <div className={styles.titleContainer}>
                                                         <p className={styles.searchResultCardTitle}>{result.title} </p>
-                                                        {selectedDatasetKey === "sample" && <p className={styles.category}>{result.category}</p>}
+                                                        {selectedDatasetKey === "conditions" && <p className={styles.category}>{result.category}</p>}
                                                     </div>
                                                     {!hideScores && (
                                                         <div className={styles.scoreContainer}>
@@ -316,7 +268,6 @@ const Vector: React.FC = () => {
                         )}
                     </div>
                 ))}
-                <TextField className={styles.efSearch} label="efSearch" value={efSearch} onChange={onEfSearchChanged} errorMessage={validationError} />
                 <Dropdown label="Dataset" selectedKey={selectedDatasetKey} onChange={onDatasetChange} options={Datasets} />
                 {textQueryVector && (
                     <>

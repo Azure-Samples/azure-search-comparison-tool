@@ -32,11 +32,11 @@
     "searchServiceSkuName": {
       "value": "standard"
     },
-    "searchTextIndexName": {
-      "value": "${AZURE_SEARCH_TEXT_INDEX=vectortextindex}"
-    },
     "searchConditionsIndexName": {
       "value": "${AZURE_SEARCH_CONDITIONS_INDEX=vectorconditionsindex}"
+    },
+    "searchCombinedIndexName": {
+      "value": "${AZURE_SEARCH_CONDITIONS_INDEX=vectorcombinedindex}"
     },
     "createRoleForUser": {
       "value": "${CREATE_ROLE_FOR_USER=true}"

@@ -18,7 +18,7 @@ param searchServiceName string = ''
 param searchServiceResourceGroupName string = ''
 param searchServiceResourceGroupLocation string = location
 param searchServiceSkuName string // Set in main.parameters.json
-param searchTextIndexName string // Set in main.parameters.json
+param searchCombinedIndexName string // Set in main.parameters.json
 param searchConditionsIndexName string // Set in main.parameters.json
 
 param openAiServiceName string = ''
@@ -159,8 +159,8 @@ module backend 'core/host/appservice.bicep' = {
       AZURE_OPENAI_SERVICE: openAi.outputs.name
       AZURE_OPENAI_DEPLOYMENT_NAME: embeddingDeploymentName
       AZURE_SEARCH_SERVICE_ENDPOINT: searchService.outputs.endpoint
-      AZURE_SEARCH_TEXT_INDEX_NAME: searchTextIndexName
       AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME: searchConditionsIndexName
+      AZURE_SEARCH_NHS_COMBINED_INDEX_NAME: searchCombinedIndexName
     }
   }
 }
@@ -296,8 +296,8 @@ output AZURE_OPENAI_DEPLOYMENT_NAME string = embeddingDeploymentName
 output AZURE_OPENAI_DEPLOYMENT_LARGE_NAME string = largeEmbeddingDeploymentName
 
 output AZURE_SEARCH_SERVICE_ENDPOINT string = searchService.outputs.endpoint
-output AZURE_SEARCH_TEXT_INDEX_NAME string = searchTextIndexName
-output AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME string = searchConditionsIndexName 
+output AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME string = searchConditionsIndexName
+output AZURE_SEARCH_NHS_COMBINED_INDEX_NAME string = searchCombinedIndexName 
 
 output REDIS_HOST string = redisCache.outputs.host
 output REDIS_PORT int = redisCache.outputs.port
