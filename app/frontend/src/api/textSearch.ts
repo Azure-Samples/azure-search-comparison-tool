@@ -2,7 +2,7 @@ import axios from "axios";
 import { SearchResponse, TextSearchRequest, TextSearchResult } from "./types";
 
 export const getTextSearchResults = async (
-    approach: "text" | "vec" | "hs" | "hssr" | undefined,
+    approach: "text" | "texttitle" | "vec" | "hs" | "hssr" | undefined,
     searchQuery: string,
     useSemanticCaptions: boolean,
     dataSet?: string,

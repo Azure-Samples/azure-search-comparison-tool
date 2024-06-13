@@ -15,10 +15,11 @@ const MaxSelectedModes = 4;
 const Vector: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [textQueryVector, setTextQueryVector] = useState<number[]>([]);
+    const [textTitleQueryVector, setTextTitleQueryVector] = useState<number[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [resultCards, setResultCards] = useState<ResultCard[]>([]);
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState<boolean>(false);
-    const [selectedApproachKeys, setSelectedApproachKeys] = useState<ApproachKey[]>(["text", "vec", "hs", "hssr"]);
+    const [selectedApproachKeys, setSelectedApproachKeys] = useState<ApproachKey[]>(["text", "texttitle", "vec", "hs", "hssr"]);
     const [useSemanticCaptions, setUseSemanticCaptions] = useState<boolean>(false);
     const [hideScores, setHideScores] = React.useState<boolean>(true);
     const [errors, setErrors] = React.useState<string[]>([]);
@@ -30,6 +31,7 @@ const Vector: React.FC = () => {
     const approaches: Approach[] = useMemo(
         () => [
             { key: "text", title: "Text Only (BM25)" },
+            { key: "texttitle", title: "Text Only (BM25) - Title" },
             { key: "vec", title: "Vectors Only (ANN)" },
             { key: "hs", title: "Vectors + Text (Hybrid Search)" },
             { key: "hssr", title: "Hybrid + Semantic Reranking" }
@@ -78,11 +80,12 @@ const Vector: React.FC = () => {
                 return;
             }
             setTextQueryVector([]);
+            setTextTitleQueryVector([]);
             setLoading(true);
 
             let searchApproachKeys = selectedApproachKeys;
             if (selectedApproachKeys.length === 0) {
-                searchApproachKeys = ["text", "vec", "hs", "hssr"];
+                searchApproachKeys = ["text", "texttitle", "vec", "hs", "hssr"];
             }
             setSelectedApproachKeys(searchApproachKeys);
 
@@ -102,15 +105,28 @@ const Vector: React.FC = () => {
                 }
             }
 
-            if (!(searchApproachKeys.length === 1 && searchApproachKeys[0] === "text")) {
-                try {
-                    queryVector = await getEmbeddings(query);
-                    setTextQueryVector(queryVector);
-                } catch (e) {
-                    searchErrors = searchErrors.concat(`Failed to generate embeddings ${String(e)}`);
-                    setErrors(searchErrors);
-                    setLoading(false);
-                    return;
+            if (!(searchApproachKeys.length === 1)) {
+                if (searchApproachKeys[0] === "text") {
+                    try {
+                        queryVector = await getEmbeddings(query);
+                        setTextQueryVector(queryVector);
+                    } catch (e) {
+                        searchErrors = searchErrors.concat(`Failed to generate embeddings ${String(e)}`);
+                        setErrors(searchErrors);
+                        setLoading(false);
+                        return;
+                    }
+                }
+                if (searchApproachKeys[0] === "texttitle") {
+                    try {
+                        queryVector = await getEmbeddings(query);
+                        setTextTitleQueryVector(queryVector);
+                    } catch (e) {
+                        searchErrors = searchErrors.concat(`Failed to generate embeddings ${String(e)}`);
+                        setErrors(searchErrors);
+                        setLoading(false);
+                        return;
+                    }
                 }
             }
 
@@ -324,6 +340,14 @@ const Vector: React.FC = () => {
                         <code className={styles.textQueryVectorModel}>openai text-embedding-ada-002</code>
                         <p>Text query vector:</p>
                         <code className={styles.textQueryVector}>[{textQueryVector.join(", ")}]</code>
+                    </>
+                )}
+                {textTitleQueryVector && (
+                    <>
+                        <p>Embedding model name:</p>
+                        <code className={styles.textTitleQueryVectorModel}>openai text-embedding-ada-002</code>
+                        <p>Text title query vector:</p>
+                        <code className={styles.textTitleQueryVector}>[{textTitleQueryVector.join(", ")}]</code>
                     </>
                 )}
             </Panel>

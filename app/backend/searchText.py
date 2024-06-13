@@ -4,11 +4,13 @@ from azure.search.documents.aio import SearchClient
 from azure.search.documents.models import QueryType, QueryCaptionType, QueryAnswerType, VectorizedQuery
 from ranking import Ranking
 from results import Results
+from approaches import Approaches
 
 class SearchText:
     def __init__(self, 
                 search_client: SearchClient,
                 results: Results,
+                approaches: Approaches,
                 semantic_configuration_name="my-semantic-config",
                 vector_field_names="titleVector,contentVector"):
         self.search_client = search_client
@@ -17,9 +19,10 @@ class SearchText:
         self.ranking = Ranking()
         self.logger = logging.getLogger(__name__)
         self.results = results
-
+        self.approaches = approaches
         self.approach = {
              "text": "Text Only (BM25)",
+             "texttitle": "Text Only (BM25) - Title",
              "vec": "Vectors Only (ANN)",
              "hs": "Vectors + Text (Hybrid Search)",
              "hssr": "Hybrid + Semantic Reranking"
@@ -42,6 +45,9 @@ class SearchText:
 
         # Vectorize query
         query_vector = query_vector if use_vector_search else None
+
+        # Set vector field names
+        vector_field_names = self.vector_field_names.split(",")[0] if approach=="texttitle" else self.vector_field_names
 
         # Set text query for no-vector, semantic and 'Hybrid' searches
         query_text = (
@@ -66,7 +72,7 @@ class SearchText:
         highlight_post_tag = "</b>" if use_semantic_captions else None
 
         vector_queries = (
-            [VectorizedQuery(vector=query_vector,fields=self.vector_field_names)]
+            [VectorizedQuery(vector=query_vector,fields=vector_field_names)]
             if use_vector_search
             else None
         )
@@ -116,18 +122,20 @@ class SearchText:
                     }
                 )
             elif data_set == "conditions":
-                results.append(
-                    {
-                        "@search.score": r["@search.score"],
-                        "@search.reranker_score": r["@search.reranker_score"],
-                        "@search.captions": captions,
-                        "id": r["id"],
-                        "title": r["title"],
-                        "content": r["description"],
-                        "titleVector": r["titleVector"],
-                        "descriptionVector": r["descriptionVector"],
-                    }
-                )
+                result_entry = {
+                    "@search.score": r["@search.score"],
+                    "@search.reranker_score": r["@search.reranker_score"],
+                    "@search.captions": captions,
+                    "id": r["id"],
+                    "title": r["title"],
+                    "content": r["description"],
+                    "titleVector": r["titleVector"],
+                }
+
+                if "descriptionVector" in r:
+                    result_entry["descriptionVector"] = r["descriptionVector"]
+
+                results.append(result_entry)
 
                 self.logger.debug(f"{r["@search.score"]} - {r["id"]}")
 

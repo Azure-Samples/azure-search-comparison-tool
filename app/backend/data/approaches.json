@@ -13,6 +13,16 @@
         ]
     },
     {
+        "key": "texttitle",
+        "title": "Text Only (BM25) - Title",
+        "documentFieldsAppliedTo": [
+            "title"
+        ],
+        "indexFields": [
+            "title"
+        ]
+    },
+    {
         "key": "vec",
         "title": "Vectors Only (ANN)",
         "description": "Uses the `text-embedding-ada-002` OpenAI model to vectorize the source text.",
