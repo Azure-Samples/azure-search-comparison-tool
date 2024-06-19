@@ -1,0 +1,180 @@
+[
+    {
+        "query": "Cancer",
+        "rankings": [
+            {
+                "id": "cancer",
+                "relevance": 1.0
+            },
+            {
+                "id": "bowel-cancer",
+                "relevance": 0.94
+            },
+            {
+                "id": "lung-cancer",
+                "relevance": 0.94
+            },
+            {
+                "id": "prostate-cancer",
+                "relevance": 0.94
+            },
+            {
+                "id": "head-and-neck-cancer",
+                "relevance": 0.85
+            }
+        ]
+    },
+    {
+        "query": "Acromegaly",
+        "rankings": [
+            {
+                "id": "acromegaly",
+                "relevance": 1.0
+            },
+            {
+                "id": "hirsutism",
+                "relevance": 0.05
+            }
+        ]
+    },
+    {
+        "query": "Insomnia",
+        "rankings": [
+            {
+                "id": "insomnia",
+                "relevance": 1.0
+            },
+            {
+                "id": "memory-loss-amnesia",
+                "relevance": 0.74
+            },
+            {
+                "id": "sleep-paralysis",
+                "relevance": 0.71
+            },
+            {
+                "id": "tension-headaches",
+                "relevance": 0.32
+            },
+            {
+                "id": "stop-smoking-treatments",
+                "relevance": 0.28
+            }
+        ]
+    },
+    {
+        "query": "Blood clot",
+        "rankings": [
+            {
+                "id": "blood clots",
+                "relevance": 1.0
+            },
+            {
+                "id": "thrombophilia",
+                "relevance": 0.82
+            },
+            {
+                "id": "pulmonary-embolism",
+                "relevance": 0.81
+            },
+            {
+                "id": "antiphospholipid-syndrome",
+                "relevance": 0.81
+            },
+            {
+                "id": "deep-vein-thrombosis-dvt",
+                "relevance": 0.81
+            }
+        ]
+    },
+    {
+        "query": "DVT",
+        "rankings": [
+            {
+                "id": "deep-vein-thrombosis-dvt",
+                "relevance": 1.0
+            },
+            {
+                "id": "thrombophilia",
+                "relevance": 0.45
+            },
+            {
+                "id": "leg-ulcer",
+                "relevance": 0.21
+            },
+            {
+                "id": "pulmonary-embolism",
+                "relevance": 0.21
+            }
+        ]
+    },
+    {
+        "query": "Sickle cell disease",
+        "rankings": [
+            {
+                "id": "sickle-cell-disease",
+                "relevance": 1.0
+            },
+            {
+                "id": "thalassaemia",
+                "relevance": 0.7
+            },
+            {
+                "id": "priapism-painful-erections",
+                "relevance": 0.14
+            },
+            {
+                "id": "jaundice",
+                "relevance": 0.01
+            },
+            {
+                "id": "slapped-cheek-syndrome",
+                "relevance": 0.01
+            }
+        ]
+    },
+    {
+        "query": "Broken nose",
+        "rankings": [
+            {
+                "id": "broken-nose",
+                "relevance": 1.0
+            }
+        ]
+    },
+    {
+        "query": "Necrotising fasciitis",
+        "rankings": [
+            {
+                "id": "necrotising-fasciitis",
+                "relevance": 1.0
+            }
+        ]
+    },
+    {
+        "query": "Labyrinthitis and vestibular neuritisncer",
+        "rankings": [
+            {
+                "id": "labyrinthitis",
+                "relevance": 1.0
+            },
+            {
+                "id": "menieres-disease",
+                "relevance": 0.65
+            }
+        ]
+    },
+    {
+        "query": "Dyspraxia in adults",
+        "rankings": [
+            {
+                "id": "developmental-coordination-disorder-dyspraxia-in-adults",
+                "relevance": 1.0
+            },
+            {
+                "id": "developmental-coordination-disorder-dyspraxia",
+                "relevance": 0.45
+            }
+        ]
+    }
+]

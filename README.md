@@ -48,7 +48,6 @@ Execute the following commands, if you don't have any pre-existing Azure service
 1. Run `azd env set AZURE_OPENAI_SERVICE {Name of existing Azure OpenAI service}`
 1. Run `azd env set AZURE_OPENAI_DEPLOYMENT_NAME {Name of existing embedding model deployment}`. Only needed if your deployment is not the default 'embeddings'. Typically this'll be a text-embedding-ada-002 model.
 1. Run `azd env set AZURE_SEARCH_SERVICE_ENDPOINT {Endpoint of existing Azure AI Search service}`
-1. Run `azd env set AZURE_SEARCH_TEXT_INDEX_NAME {Name of existing Azure AI Search index with text}`
 1. Run `azd up`
 
 ### Deploying again

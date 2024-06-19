@@ -13,7 +13,8 @@ export default defineConfig({
     server: {
         proxy: {
             "/searchText": "http://127.0.0.1:5000",
-            "/embedQuery": "http://127.0.0.1:5000"
+            "/embedQuery": "http://127.0.0.1:5000",
+            "/approaches": "http://127.0.0.1:5000"
         }
     }
 });

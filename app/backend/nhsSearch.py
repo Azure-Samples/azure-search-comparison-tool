@@ -54,7 +54,7 @@ class AlgoliaSiteSearch:
             
         ranking_result = self.ranking.rank_results(query, ordered_result_ids)
 
-        self.logger.info(f"Algolia  => NDCG:{ranking_result["ndcg"]}")
+        self.logger.info(f"Algolia  => NDCG@3:{ranking_result["ndcg@3"]}")
 
         for key, value in list(ranking_result["result_rankings"].items()):
 
@@ -70,8 +70,13 @@ class AlgoliaSiteSearch:
             print(f"{key}->{value}")
             ideal_results.append({"id": key, "relevance": value})
 
-        self.results.persist_ranked_results(query, "algolia", ranking_result["ndcg"], ideal_results, actual_results)
-
+        self.results.persist_ranked_results(
+            query,
+            "algolia",
+            ranking_result["ndcg@3"],
+            ranking_result["ndcg@10"],
+            ideal_results,
+            actual_results)
 
     def __process_search_results(self, results_html: str) -> list:
 
@@ -89,7 +94,7 @@ class AlgoliaSiteSearch:
 
             inner_uri = urlparse(query_params["url"][0])
 
-            id = inner_uri.path.strip('/').split('/')[-1]
+            id = inner_uri.path.strip('/').replace("/", "_")
 
             # print(link.text)
 

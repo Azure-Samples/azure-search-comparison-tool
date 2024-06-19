@@ -1,11 +1,12 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { Checkbox, DefaultButton, Dropdown, IDropdownOption, MessageBar, MessageBarType, Panel, Spinner, Stack, TextField, Toggle } from "@fluentui/react";
 import { DismissCircle24Filled, Search24Regular, Settings20Regular } from "@fluentui/react-icons";
 
 import styles from "./Vector.module.css";
 
-import { TextSearchResult, Approach, ResultCard, ApproachKey, AxiosErrorResponseData } from "../../api/types";
+import { TextSearchResult, Approach, ResultCard, AxiosErrorResponseData } from "../../api/types";
 import { getEmbeddings, getTextSearchResults } from "../../api/textSearch";
+import { getApproaches } from "../../api/approaches";
 import SampleCard from "../../components/SampleCards";
 import { AxiosError } from "axios";
 
@@ -17,21 +18,27 @@ const Vector: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [resultCards, setResultCards] = useState<ResultCard[]>([]);
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState<boolean>(false);
-    const [selectedApproachKeys, setSelectedApproachKeys] = useState<ApproachKey[]>(["text", "vec", "hs", "hssr"]);
+    const [selectedApproachKeys, setSelectedApproachKeys] = useState<string[]>(["text"]);
     const [useSemanticCaptions, setUseSemanticCaptions] = useState<boolean>(false);
     const [hideScores, setHideScores] = React.useState<boolean>(true);
     const [errors, setErrors] = React.useState<string[]>([]);
     const [selectedDatasetKey, setSelectedDatasetKey] = React.useState<string>("conditions");
+    const [allApproaches, setAllApproaches] = React.useState<Approach[]>([]);
 
-    const approaches: Approach[] = useMemo(
-        () => [
-            { key: "text", title: "Text Only (BM25)" },
-            { key: "vec", title: "Vectors Only (ANN)" },
-            { key: "hs", title: "Vectors + Text (Hybrid Search)" },
-            { key: "hssr", title: "Hybrid + Semantic Reranking" }
-        ],
-        []
-    );
+    useEffect(() => {
+        async function loadApproaches() {
+            const all_approaches = await getApproaches();
+
+            setAllApproaches(all_approaches);
+        }
+        loadApproaches().catch(() => console.log("oh no!"));
+    }, []);
+
+    const getApproachesForDataSet = useCallback(() => {
+        return allApproaches.filter(a => a.data_set == selectedDatasetKey).map(a => a);
+    }, [allApproaches, selectedDatasetKey]);
+
+    const approaches: Approach[] = useMemo(() => getApproachesForDataSet(), [getApproachesForDataSet]);
 
     const Datasets: IDropdownOption[] = useMemo(
         () => [
@@ -57,19 +64,17 @@ const Vector: React.FC = () => {
             setTextQueryVector([]);
             setLoading(true);
 
-            let searchApproachKeys = selectedApproachKeys;
-            if (selectedApproachKeys.length === 0) {
-                searchApproachKeys = ["text", "vec", "hs", "hssr"];
-            }
-            setSelectedApproachKeys(searchApproachKeys);
+            const searchApproaches = allApproaches.filter(a => selectedApproachKeys.includes(a.key)).map(a => a);
 
             let resultsList: ResultCard[] = [];
             let searchErrors: string[] = [];
             let queryVector: number[] = [];
 
-            if (!(searchApproachKeys.length === 1 && searchApproachKeys[0] === "text")) {
+            if (searchApproaches.filter(a => a.use_vector_search === true).length > 0) {
+                const approachKey = searchApproaches.filter(a => a.use_vector_search === true).map(a => a)[0].key;
+
                 try {
-                    queryVector = await getEmbeddings(query);
+                    queryVector = await getEmbeddings(query, approachKey);
                     setTextQueryVector(queryVector);
                 } catch (e) {
                     searchErrors = searchErrors.concat(`Failed to generate embeddings ${String(e)}`);
@@ -80,11 +85,11 @@ const Vector: React.FC = () => {
             }
 
             Promise.allSettled(
-                searchApproachKeys.map(async approachKey => {
-                    const results = await getTextSearchResults(approachKey, query, useSemanticCaptions, selectedDatasetKey, queryVector);
+                searchApproaches.map(async approach => {
+                    const results = await getTextSearchResults(approach, query, useSemanticCaptions, selectedDatasetKey, queryVector);
                     const searchResults = results.results;
                     const resultCard: ResultCard = {
-                        approachKey,
+                        approachKey: approach.key,
                         searchResults
                     };
                     return resultCard;
@@ -107,7 +112,7 @@ const Vector: React.FC = () => {
                     setLoading(false);
                 });
         },
-        [selectedApproachKeys, useSemanticCaptions, selectedDatasetKey]
+        [selectedApproachKeys, useSemanticCaptions, selectedDatasetKey, allApproaches]
     );
 
     const handleOnKeyDown = useCallback(
@@ -146,8 +151,21 @@ const Vector: React.FC = () => {
 
     const onDatasetChange = React.useCallback((_event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption): void => {
         setResultCards([]);
-        setSelectedDatasetKey(String(item?.key) ?? "conditions");
+
+        const dataSet = String(item?.key) ?? "conditions";
+        const selectedApproach = dataSet === "conditions" ? "text" : "text_2";
+
+        setSelectedDatasetKey(dataSet);
+        setSelectedApproachKeys([selectedApproach]);
     }, []);
+
+    function isChecked(approachKey: string): boolean {
+        return selectedApproachKeys.includes(approachKey);
+    }
+
+    function isDisabled(approachKey: string): boolean {
+        return selectedApproachKeys.length == MaxSelectedModes && !selectedApproachKeys.includes(approachKey);
+    }
 
     return (
         <div className={styles.vectorContainer}>
@@ -250,10 +268,10 @@ const Vector: React.FC = () => {
                     <div key={approach.key}>
                         <Checkbox
                             className={styles.vectorSettingsSeparator}
-                            checked={selectedApproachKeys.includes(approach.key)}
+                            checked={isChecked(approach.key)}
                             label={approach.title}
                             onChange={(_ev, checked) => onApproachChange(_ev, checked, approach)}
-                            disabled={selectedApproachKeys.length == MaxSelectedModes && !selectedApproachKeys.includes(approach.key)}
+                            disabled={isDisabled(approach.key)}
                         />
                         {approach.key === "hssr" && selectedApproachKeys.includes("hssr") && (
                             <>

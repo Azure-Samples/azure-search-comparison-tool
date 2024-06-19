@@ -1,36 +1,25 @@
 import axios from "axios";
-import { SearchResponse, TextSearchRequest, TextSearchResult } from "./types";
+import { Approach, SearchResponse, TextSearchRequest, TextSearchResult } from "./types";
 
 export const getTextSearchResults = async (
-    approach: "text" | "vec" | "hs" | "hssr" | undefined,
+    approach: Approach,
     searchQuery: string,
     useSemanticCaptions: boolean,
     dataSet?: string,
     queryVector?: number[],
-    select?: string,
     k?: number
 ): Promise<SearchResponse<TextSearchResult>> => {
     const requestBody: TextSearchRequest = {
         query: searchQuery,
-        select: select,
-        vectorSearch: false,
-        hybridSearch: false,
         dataSet: dataSet,
-        approach: approach
+        approach: approach.key
     };
 
-    if (approach === "vec" || approach === "hs" || approach === "hssr") {
-        requestBody.vectorSearch = true;
+    if (approach.use_vector_search ?? false) {
         requestBody.k = k;
         requestBody.queryVector = queryVector;
 
-        if (approach === "hs") {
-            requestBody.hybridSearch = true;
-        }
-
-        if (approach === "hssr") {
-            requestBody.hybridSearch = true;
-            requestBody.useSemanticRanker = true;
+        if (approach.key === "hssr") {
             requestBody.useSemanticCaptions = useSemanticCaptions;
         }
     }
@@ -40,7 +29,7 @@ export const getTextSearchResults = async (
     return response.data;
 };
 
-export const getEmbeddings = async (query: string): Promise<number[]> => {
-    const response = await axios.post<number[]>("/embedQuery", { query });
+export const getEmbeddings = async (query: string, approach: string): Promise<number[]> => {
+    const response = await axios.post<number[]>("/embedQuery", { query, approach });
     return response.data;
 };

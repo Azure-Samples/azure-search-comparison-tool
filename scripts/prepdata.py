@@ -11,6 +11,7 @@ import uuid
 import redis
 import logging
 import numpy as np
+from keybert import KeyBERT
 
 from openai import AzureOpenAI
 #from tenacity import retry, wait_random_exponential, stop_after_attempt
@@ -18,7 +19,6 @@ from azure.identity import DefaultAzureCredential
 from azure.search.documents import SearchClient
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
-    HnswParameters,
     SemanticPrioritizedFields,
     SearchableField,
     SearchField,
@@ -31,9 +31,13 @@ from azure.search.documents.indexes.models import (
     VectorSearch,
     VectorSearchProfile,
     HnswAlgorithmConfiguration,
-    ExhaustiveKnnAlgorithmConfiguration
+    ExhaustiveKnnAlgorithmConfiguration,
+    ScoringProfile,
+    TextWeights
 )
 from postgres import Postgres
+
+from azure.core.exceptions import ResourceNotFoundError
 
 AZURE_OPENAI_SERVICE = os.environ.get("AZURE_OPENAI_SERVICE")
 AZURE_OPENAI_DEPLOYMENT_NAME = os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME")
@@ -212,8 +216,6 @@ def generate_text_embeddings(
         input = text,
         model = openai_deployment_name)
 
-    print(f"generated {len(response.data)} embeddings")
-
     embeddings = np.array([item.embedding for item in response.data])
 
     return np.concatenate(embeddings).tolist()
@@ -245,8 +247,6 @@ def get_text_embeddings(
         redis_obj = {}
 
         for idx, text_property_name in enumerate(text_property_names):
-
-            print(f"{idx} {text_property_name}")
 
             if text_property_name in item:
 
@@ -299,7 +299,6 @@ def publish_results_db_schema():
 
     except Exception as e:
         logging.exception(str(e))
-    
 
 def create_search_index_nhs_combined_data() -> bool:
     index_client = SearchIndexClient(
@@ -320,6 +319,7 @@ def create_search_index_nhs_combined_data() -> bool:
                 ),
                 SearchableField(name="title", type=SearchFieldDataType.String),
                 SearchableField(name="description", type=SearchFieldDataType.String),
+                SearchableField(name="aspect_headers", collection=True, type=SearchFieldDataType.Collection(SearchFieldDataType.String)),
                 SearchableField(name="short_descriptions", collection=True, type=SearchFieldDataType.Collection(SearchFieldDataType.String)),
                 SearchableField(name="content", collection=True, type=SearchFieldDataType.Collection(SearchFieldDataType.String)),
                 SearchField(
@@ -327,40 +327,78 @@ def create_search_index_nhs_combined_data() -> bool:
                     type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                     searchable=True,
                     vector_search_dimensions=3072,
-                    vector_search_profile_name="test-vector-profile"
+                    vector_search_profile_name="knn-vector-profile"
                 ),
                 SearchField(
                     name="description_vector",
                     type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                     searchable=True,
                     vector_search_dimensions=3072,
-                    vector_search_profile_name="test-vector-profile"
+                    vector_search_profile_name="knn-vector-profile"
+                ),
+                SearchField(
+                    name="aspect_headers_vector",
+                    type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
+                    searchable=True,
+                    vector_search_dimensions=3072,
+                    vector_search_profile_name="knn-vector-profile"
                 ),
                 SearchField(
                     name="short_descriptions_vector",
                     type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                     searchable=True,
                     vector_search_dimensions=3072,
-                    vector_search_profile_name="test-vector-profile"
+                    vector_search_profile_name="knn-vector-profile"
                 ),
                 SearchField(
                     name="content_vector",
                     type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                     searchable=True,
                     vector_search_dimensions=3072,
-                    vector_search_profile_name="test-vector-profile"
+                    vector_search_profile_name="knn-vector-profile"
+                ),
+                SearchField(
+                    name="keywords",
+                    type=SearchFieldDataType.Collection(SearchFieldDataType.String),
+                    searchable=False
+                ),
+                SearchField(
+                    name="content_types",
+                    type=SearchFieldDataType.Collection(SearchFieldDataType.String),
+                    searchable=False,
+                    filterable=True,
+                    sortable=False,
+                    facetable=True
+                ),
+                SimpleField(
+                    name="url",
+                    type=SearchFieldDataType.String,
+                    key=False,
+                    searchable=False,
+                    filterable=False,
+                    sortable=False,
+                    facetable=False,
                 )
             ],
             vector_search=VectorSearch(
-                algorithms=[ExhaustiveKnnAlgorithmConfiguration(name="testKnn")],
+                algorithms=[ExhaustiveKnnAlgorithmConfiguration(name="exhaustiveKnn")],
                 profiles=[VectorSearchProfile(
-                    name="test-vector-profile",
-                    algorithm_configuration_name="testKnn")]
+                    name="knn-vector-profile",
+                    algorithm_configuration_name="exhaustiveKnn")]
             ),
             semantic_search=SemanticSearch(
                 configurations=[
                     SemanticConfiguration(
-                        name="martin-test-semantic-config",
+                        name="default-semantic-config",
+                        prioritized_fields=SemanticPrioritizedFields(
+                            title_field=SemanticField(field_name="title"),
+                            content_fields=[
+                                SemanticField(field_name="description")
+                            ]
+                        ),
+                    ),
+                    SemanticConfiguration(
+                        name="semantic-config-content",
                         prioritized_fields=SemanticPrioritizedFields(
                             title_field=SemanticField(field_name="title"),
                             content_fields=[
@@ -368,16 +406,40 @@ def create_search_index_nhs_combined_data() -> bool:
                                 SemanticField(field_name="short_descriptions")
                             ]
                         ),
+                    ),
+                    SemanticConfiguration(
+                        name="semantic-config-keywords",
+                        prioritized_fields=SemanticPrioritizedFields(
+                            title_field=SemanticField(field_name="title"),
+                            content_fields=[
+                                SemanticField(field_name="description")
+                            ],
+                            keywords_fields=[
+                                SemanticField(field_name="keywords")
+                            ]
+                        ),
                     )
                 ]
             ),
+            scoring_profiles=[
+                ScoringProfile(
+                    name="title_weighted",
+                    text_weights=TextWeights(
+                        weights={
+                            "title": 2.0,
+                            "description": 1.75,
+                            "aspect_headers": 1.5,
+                            "short_descriptions": 1.25,
+                            "content": 1.0
+                            }))
+            ]
         )
         print(f"Creating {AZURE_SEARCH_NHS_COMBINED_INDEX_NAME} search index")
         index_client.create_index(index)
         return True
     else:
         print(f"Search index {AZURE_SEARCH_NHS_COMBINED_INDEX_NAME} already exists")
-        return False
+        return True
 
 def populate_search_index_nhs_combined_data():
     print(f"Populating search index {AZURE_SEARCH_NHS_COMBINED_INDEX_NAME} with documents")
@@ -402,102 +464,142 @@ def populate_search_index_nhs_combined_data():
         azure_endpoint = f"https://{AZURE_OPENAI_SERVICE}.openai.azure.com" 
     )
 
-    with open("data/conditions_1.json", "r", encoding="utf-8") as file:
-        conditions_items = json.load(file)
+    kw_model = KeyBERT()
 
-    with open("data/medicines_1.json", "r", encoding="utf-8") as file:
-        medicines_items = json.load(file)
+    for file_name in ["data/conditions_1.json", "data/medicines_1.json", "data/articles_1.json"]:
 
-    items = conditions_items + medicines_items
+        with open(file_name, "r", encoding="utf-8") as file:
+            items = json.load(file)
 
-    print(f"loaded {len(conditions_items)} conditions and {len(medicines_items)} medicines and combined into {len(items)} items")
+        print(f"loaded {len(items)} items from {file_name}")
 
-    batched_treated_items = []
-    batch_size = 12
+        batched_treated_items = []
+        batch_size = 12
 
-    for item in items:
+        for item in items:
 
-        treated_item = {
-            "id": item["id"],
-            "title": item["title"],
-            "description": item["description"]
-        }
+            item_id = item["url_path"].strip('/').replace("/", "_")
 
-        short_descriptions = []
-        rich_text_content = []
+            try:
+                existing_doc = search_client.get_document(item_id, ["id"])
 
-        all_short_description_text = ""
-        all_content = ""
+                print(f"{existing_doc["id"]} already exists. Skipping...")
 
-        nbsp = u'\xa0'
+                continue
+            except ResourceNotFoundError:
+                print(f"Adding entry for {item_id}")
 
-        for c in item["content"]:
+            treated_item = {
+                "id": item_id,
+                "title": item["title"],
+                "description": item["description"],
+                "content_types": item["content_types"],
+                "url": item["url_path"]
+            }
 
-            short_description = c["value"]["short_description"]
+            aspect_headers = []
+            short_descriptions = []
+            rich_text_content = []
 
-            if len(short_description) > 0:
-                short_descriptions.append(short_description)
+            all_content = ""
 
-                if len(all_short_description_text) == 0:
-                    all_short_description_text = short_description
-                else:
-                    all_short_description_text += " " + short_description
+            nbsp = u'\xa0'
 
-            for inner_c in c["value"]["content"]:
+            for c in item["content"]:
 
-                if inner_c["type"] == "richtext":
-                    rich_text = inner_c["value"]
+                aspect_header = c["value"]["aspect_header"]
 
-                    soup = BeautifulSoup(rich_text, 'html.parser')
+                if len(aspect_header) > 0:
+                    aspect_headers.append(aspect_header)
 
-                    # print(soup.prettify())
+                short_description = c["value"]["short_description"]
 
-                    # specifically convert non breaking spaces to spaces
-                    t2 = soup.get_text(separator=" ").replace('\u00a0', ' ').replace(nbsp, ' ').replace('  ', ' ').replace('"','\\"')
+                if len(short_description) > 0:
+                    short_descriptions.append(short_description)
 
-                    t3 = json.loads(f'"{t2}"')
-                    
-                    # print(t3)
+                for inner_c in c["value"]["content"]:
 
-                    rich_text_content.append(t3)
+                    if inner_c["type"] == "richtext":
+                        rich_text = inner_c["value"]
 
-                    if len(all_content) == 0:
-                        all_content = t3
-                    else:
-                        all_content += " " + t3
+                        soup = BeautifulSoup(rich_text, 'html.parser')
 
-        print(f"{treated_item["id"]} has {len(short_descriptions)} short descriptions")
+                        # print(soup.prettify())
 
-        if len(short_descriptions) > 0:
-            treated_item["short_descriptions"] = short_descriptions
+                        # specifically convert non breaking spaces to spaces
+                        t2 = soup.get_text(separator=" ").replace('\u00a0', ' ').replace(nbsp, ' ').replace('  ', ' ').replace('"','\\"')
 
-        if len(rich_text_content) > 0:
-            treated_item["content"] = rich_text_content
-        
-        get_text_embeddings(
-            redis_client,
-            openai_client,
-            text_property_names=["title", "description", "short_descriptions", "content"],
-            vector_property_names=["title_vector", "description_vector", "short_descriptions_vector", "content_vector"],
-            item=treated_item,
-            deployment_name=AZURE_OPENAI_DEPLOYMENT_LARGE_NAME)
+                        t3 = json.loads(f'"{t2}"')
+                        
+                        # print(t3)
 
-        batched_treated_items.append(treated_item)
+                        rich_text_content.append(t3)
 
-        if len(batched_treated_items) >= batch_size:
+                        if len(all_content) == 0:
+                            all_content = t3
+                        else:
+                            all_content += " " + t3
 
-            print(f"Uploading batch of {len(batched_treated_items)} items ...")
+            print(f"{treated_item["id"]} has {len(aspect_headers)} aspect headers and {len(short_descriptions)} short descriptions")
 
+            if len(aspect_headers) > 0:
+                treated_item["aspect_headers"] = aspect_headers
+
+            if len(short_descriptions) > 0:
+                treated_item["short_descriptions"] = short_descriptions
+
+            if len(rich_text_content) > 0:
+                treated_item["content"] = rich_text_content
+            
+            get_text_embeddings(
+                redis_client,
+                openai_client,
+                text_property_names=["title", "description", "aspect_headers", "short_descriptions", "content"],
+                vector_property_names=["title_vector", "description_vector", "aspect_headers_vector", "short_descriptions_vector", "content_vector"],
+                item=treated_item,
+                deployment_name=AZURE_OPENAI_DEPLOYMENT_LARGE_NAME)
+
+            treated_item["keywords"] = get_keywords(kw_model, treated_item)
+
+            batched_treated_items.append(treated_item)
+
+            if len(batched_treated_items) >= batch_size:
+
+                print(f"Uploading batch of {len(batched_treated_items)} items ...")
+
+                search_client.upload_documents(batched_treated_items)
+
+                batched_treated_items.clear()
+
+        if len(batched_treated_items) > 0:
+
+            print(f"Uploading final batch of {len(batched_treated_items)} items ...")
             search_client.upload_documents(batched_treated_items)
 
-            batched_treated_items.clear()
+        print(f"Uploaded {len(items)} documents to index '{AZURE_SEARCH_NHS_COMBINED_INDEX_NAME}'")
 
-    if len(batched_treated_items) > 0:
+def get_keywords(kw_model, item):
+    str_aspect_headers = " ".join(item["aspect_headers"]) if "aspect_headers" in item else ""
+    str_short_descs = " ".join(item["short_descriptions"]) if "short_descriptions" in item else ""
+    str_content = " ".join(item["content"]) if "content" in item else ""
 
-        print(f"Uploading final batch of {len(batched_treated_items)} items ...")
-        search_client.upload_documents(batched_treated_items)
+    doc = " ".join([ item["title"], item["description"], str_aspect_headers, str_short_descs, str_content ])
 
-    print(f"Uploaded {len(items)} documents to index 'martin-test-index'")
+    keywords = kw_model.extract_keywords(
+        doc,
+        top_n=20,
+        use_mmr=True,
+        diversity=0.5)
+
+    selected_keywords = []
+
+    for kw in keywords:
+        if kw[1] > 0.25:
+            selected_keywords.append(kw[0])
+
+    print(selected_keywords)
+
+    return selected_keywords
 
 def create_and_populate_nhs_combined_data_index():
     created = create_search_index_nhs_combined_data()

@@ -3,11 +3,10 @@
         "key": "text",
         "title": "Text Only (BM25)",
         "description": "Uses the Best Match 25 full text search algorithm with default `k1` and `b` parameters. `k1` controls the scaling function between the term frequency of each matching terms and the final relevance score of a document-query pair (0 - 3). By default, a value of 1.2 is used. `b` controls how the length of a document affects the relevance score (0 - 1). By default, a value of 0.75 is used.",
-        "documentFieldsAppliedTo": [
-            "title",
-            "description"
-        ],
-        "indexFields": [
+        "use_vector_search": false,
+        "data_set": "conditions",
+        "output_field_names": [
+            "id",
             "title",
             "description"
         ]
@@ -16,48 +15,166 @@
         "key": "vec",
         "title": "Vectors Only (ANN)",
         "description": "Uses the `text-embedding-ada-002` OpenAI model to vectorize the source text.",
-        "documentFieldsAppliedTo": [
+        "use_vector_search": true,
+        "data_set": "conditions",
+        "output_field_names": [
+            "id",
             "title",
             "description"
         ],
-        "indexFields": [
-            "titleVector",
-            "descriptionVector"
-        ]
+        "vector_field_names": "titleVector,descriptionVector",
+        "use_hybrid_search": false,
+        "use_semantic_ranker": false,
+        "open_ai_deployment_name": "embedding"
+    },
+    {
+        "key": "vec_roshaan",
+        "title": "Roshaan's Title Vector Only (ANN)",
+        "description": "Uses the `text-embedding-ada-002` OpenAI model to vectorize the source text, but only uses the title field in the search query.",
+        "use_vector_search": true,
+        "data_set": "conditions",
+        "output_field_names": [
+            "id",
+            "title",
+            "description"
+        ],
+        "vector_field_names": "descriptionVector",
+        "use_hybrid_search": false,
+        "use_semantic_ranker": false,
+        "open_ai_deployment_name": "embedding"
     },
     {
         "key": "hs",
         "title": "Vectors + Text (Hybrid Search)",
         "description": "",
-        "documentFieldsAppliedTo": [
+        "use_vector_search": true,
+        "data_set": "conditions",
+        "output_field_names": [
+            "id",
             "title",
             "description"
         ],
-        "indexFields": [
-            "title",
-            "description",
-            "titleVector",
-            "descriptionVector"
-        ]
+        "vector_field_names": "titleVector,descriptionVector",
+        "use_hybrid_search": true,
+        "use_semantic_ranker": false,
+        "open_ai_deployment_name": "embedding"
     },
     {
         "key": "hssr",
         "title": "Hybrid + Semantic Reranking",
         "description": "",
-        "documentFieldsAppliedTo": [
+        "use_vector_search": true,
+        "data_set": "conditions",
+        "output_field_names": [
+            "id",
             "title",
             "description"
         ],
-        "indexFields": [
-            "title",
-            "description",
-            "titleVector",
-            "descriptionVector"
-        ]
+        "vector_field_names": "titleVector,descriptionVector",
+        "use_hybrid_search": true,
+        "use_semantic_ranker": true,
+        "semantic_configuration_name": "basic-semantic-config",
+        "open_ai_deployment_name": "embedding"
     },
     {
         "key": "algolia",
         "title": "Algolia",
         "description": "This approach scrapes the NHS.UK site performing the required search query in this way exposing the top 10 Algolia search results for comparison purposes"
+    },
+    {
+        "key": "text_2",
+        "title": "Text Only (BM25)",
+        "description": "Uses the Best Match 25 full text search algorithm with default `k1` and `b` parameters. `k1` controls the scaling function between the term frequency of each matching terms and the final relevance score of a document-query pair (0 - 3). By default, a value of 1.2 is used. `b` controls how the length of a document affects the relevance score (0 - 1). By default, a value of 0.75 is used. Index uses a full set of data from the data source",
+        "use_vector_search": false,
+        "data_set": "combined",
+        "output_field_names": [
+            "id",
+            "title",
+            "description"
+        ]
+    },
+    {
+        "key": "exhaustive_vec_large",
+        "title": "Vectors Only (large - Knn)",
+        "description": "",
+        "use_vector_search": true,
+        "data_set": "combined",
+        "output_field_names": [
+            "id",
+            "title",
+            "description"
+        ],
+        "vector_field_names": "title_vector,description_vector,aspect_headers_vector,short_descriptions_vector,content_vector",
+        "use_hybrid_search": false,
+        "use_semantic_ranker": false,
+        "open_ai_deployment_name": "embedding-large"
+    },
+    {
+        "key": "hs_large",
+        "title": "Text & Vectors (large - Knn)",
+        "description": "",
+        "use_vector_search": true,
+        "data_set": "combined",
+        "output_field_names": [
+            "id",
+            "title",
+            "description"
+        ],
+        "vector_field_names": "title_vector,description_vector,aspect_headers_vector,short_descriptions_vector,content_vector",
+        "use_hybrid_search": true,
+        "use_semantic_ranker": false,
+        "open_ai_deployment_name": "embedding-large"
+    },
+    {
+        "key": "hssr_large",
+        "title": "Hybrid + Semantic Reranking",
+        "description": "",
+        "use_vector_search": true,
+        "data_set": "combined",
+        "output_field_names": [
+            "id",
+            "title",
+            "description"
+        ],
+        "vector_field_names": "title_vector,description_vector,aspect_headers_vector,short_descriptions_vector,content_vector",
+        "use_hybrid_search": true,
+        "use_semantic_ranker": true,
+        "semantic_configuration_name": "default-semantic-config",
+        "open_ai_deployment_name": "embedding-large"
+    },
+    {
+        "key": "hssr_large_kw",
+        "title": "Hybrid + Semantic Reranking (keywords)",
+        "description": "",
+        "use_vector_search": true,
+        "data_set": "combined",
+        "output_field_names": [
+            "id",
+            "title",
+            "description"
+        ],
+        "vector_field_names": "title_vector,description_vector,aspect_headers_vector,short_descriptions_vector,content_vector",
+        "use_hybrid_search": true,
+        "use_semantic_ranker": true,
+        "semantic_configuration_name": "semantic-config-keywords",
+        "open_ai_deployment_name": "embedding-large"
+    },
+    {
+        "key": "hssr_large_kw_title_weighted",
+        "title": "HSSR (keywords) + (title weighting)",
+        "description": "",
+        "use_vector_search": true,
+        "data_set": "combined",
+        "output_field_names": [
+            "id",
+            "title",
+            "description"
+        ],
+        "vector_field_names": "title_vector,description_vector,aspect_headers_vector,short_descriptions_vector,content_vector",
+        "use_hybrid_search": true,
+        "use_semantic_ranker": true,
+        "semantic_configuration_name": "semantic-config-keywords",
+        "scoring_profile_name": "title_weighted",
+        "open_ai_deployment_name": "embedding-large"
     }
 ]

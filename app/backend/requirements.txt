@@ -9,3 +9,4 @@ pyyaml==6.0.1
 postgres==4.0
 beautifulsoup4==4.12.3
 requests==2.32.3
+redis==5.0.4

@@ -1,22 +1,17 @@
-export type ApproachKey = "text" | "vec" | "hs" | "hssr";
-
 export interface Approach {
-    key: ApproachKey;
+    key: string;
     title: string;
+    data_set?: string;
+    use_vector_search?: boolean;
 }
 
 export interface TextSearchRequest {
     query: string;
-    vectorSearch?: boolean;
-    hybridSearch?: boolean;
-    select?: string;
     k?: number;
-    filter?: string;
-    useSemanticRanker?: boolean;
     useSemanticCaptions?: boolean;
     queryVector?: number[];
     dataSet?: string;
-    approach: "text" | "vec" | "hs" | "hssr" | undefined;
+    approach: string;
 }
 
 export interface SearchResponse<T extends SearchResult> {
@@ -37,9 +32,7 @@ interface SearchCaptions {
 export interface TextSearchResult extends SearchResult {
     id: string;
     title: string;
-    titleVector: number[];
     content: string;
-    contentVector: number[];
     category?: string;
     url?: string;
 }

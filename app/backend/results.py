@@ -11,14 +11,21 @@ class Results:
         self.userName = userName
         self.password = password
 
-    def persist_ranked_results(self, search_query: str, approach: str, ndcg: float, ideal_results: list, actual_results: list):
+    def persist_ranked_results(
+            self, 
+            search_query: str, 
+            approach: str, 
+            ndcg3: float,
+            ndcg10: float,
+            ideal_results: list, 
+            actual_results: list):
         """
         Persist a set of search results with NDCG and associated ideal result rankings
         """
 
         db = self.__connect()
 
-        result_id = self.__add_result(db, search_query, approach, ndcg)
+        result_id = self.__add_result(db, search_query, approach, ndcg3, ndcg10)
 
         self.__add_ideal_results(db, result_id, ideal_results)
         self.__add_actual_results(db, result_id, actual_results)
@@ -34,13 +41,13 @@ class Results:
 
         self.__add_actual_results(db, result_id, actual_results)
 
-    def __add_result(self, db: Postgres, search_query: str, approach: str, ndcg: float) -> str:
+    def __add_result(self, db: Postgres, search_query: str, approach: str, ndcg3: float = None, ndcg10: float = None) -> str:
 
         query = """
-        INSERT INTO public.poc_results (search_query, approach_code, ndcg, search_time)
-        VALUES(%(query)s, %(approach)s, %(ndcg)s, NOW())
+        INSERT INTO public.poc_results (search_query, approach_code, ndcg_3, ndcg_10, search_time)
+        VALUES(%(query)s, %(approach)s, %(ndcg3)s, %(ndcg10)s, NOW())
         RETURNING result_id;
-        """ if ndcg != None else """
+        """ if ndcg3 != None else """
         INSERT INTO public.poc_results (search_query, approach_code, search_time)
         VALUES(%(query)s, %(approach)s, NOW())
         RETURNING result_id;
@@ -51,8 +58,11 @@ class Results:
             "approach": approach
         }
 
-        if ndcg != None:
-            params["ndcg"] = ndcg
+        if ndcg3 != None:
+            params["ndcg3"] = ndcg3
+
+        if ndcg10 != None:
+            params["ndcg10"] = ndcg10
 
         result_id = db.one(query, params)
 
