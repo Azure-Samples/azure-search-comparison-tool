@@ -25,6 +25,12 @@ class Results:
 
         db = self.__connect()
 
+        result_id = self.__get_result_id(db, search_query, approach)
+
+        if result_id is not None:
+            self.logger.info(f"Deleting existing result for {search_query} / {approach}")
+            self.__delete_result_(result_id)
+
         result_id = self.__add_result(db, search_query, approach, ndcg3, ndcg10)
 
         self.__add_ideal_results(db, result_id, ideal_results)
@@ -36,6 +42,12 @@ class Results:
         """
 
         db = self.__connect()
+
+        result_id = self.__get_result_id(db, search_query, approach)
+
+        if result_id is not None:
+            self.logger.info(f"Deleting existing result for {search_query} / {approach}")
+            self.__delete_result_(db, result_id)
         
         result_id = self.__add_result(db, search_query, approach, None)
 
@@ -106,6 +118,40 @@ class Results:
             }
 
             db.run(query, params)
+
+    def __get_result_id(self, db: Postgres, search_query: str, approach: str) -> str | None:
+
+        query = """
+        SELECT result_id
+        FROM public.poc_results
+        WHERE search_query = %(query)s
+        AND approach_code = %(approach)s
+        """
+        
+        params = {
+            "query": search_query,
+            "approach": approach
+        }
+
+        result_id = db.one(query, params)
+
+        # self.logger.debug(f"Found result {result_id} for {search_query}/{approach}")
+
+        return result_id
+    
+    def __delete_result_(self, db: Postgres, result_id: str):
+
+        query = """
+        DELETE
+        FROM public.poc_results
+        WHERE result_id = %(result_id)s
+        """
+        
+        params = {
+            "result_id": result_id
+        }
+
+        db.run(query, params)
 
     def __connect(self):
         try:
