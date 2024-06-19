@@ -1,24 +1,34 @@
 import numpy as np
 import json
 import logging
+import os, glob
 
 class Ranking:
     def __init__(self):
 
         self.logger = logging.getLogger(__name__)
 
-        with open("data/rankings.json", "r", encoding="utf-8") as file:
-            self.input_data = json.load(file)
+        self.ranked_queries = {}
 
-            self.logger.debug(f"loaded {len(self.input_data)} ranking queries")
+        path = './data/search_queries'
+        for filename in glob.glob(os.path.join(path, '*.json')):
+
+            with open(os.path.join(os.getcwd(), filename), 'r') as f: # open in readonly mode
+
+                for item in json.load(f):
+
+                    query = item["query"].lower()
+
+                    rankings = item["rankings"] if "rankings" in item and len(item["rankings"]) > 0 else None
+
+                    if rankings is not None:
+                        self.logger.debug(f"Found {len(item["rankings"])} rankings for {query}")
+                        self.ranked_queries[query] = item
+
+        self.logger.debug(f"loaded {len(self.ranked_queries)} ranked search queries")
 
     def hasIdealRanking(self, query: str):
-
-        for item in self.input_data:
-            if item["query"].lower() == query.lower():
-                return True
-            
-        return False
+        return query.lower() in self.ranked_queries
     
     def rank_results(self, query: str, results):
 
@@ -60,17 +70,16 @@ class Ranking:
             "result_rankings": result_rankings
         }
     
-    def __get_ideal_rankings(self, query: str):
+    def __get_ideal_rankings(self, query: str) -> dict | None:
 
-        for item in self.input_data:
-            if item["query"].lower() == query.lower():
+        if query.lower() in self.ranked_queries:
 
-                rks = {}
+            rks = {}
 
-                for ranking in item["rankings"]:
-                    rks[ranking["id"]] = ranking["relevance"]
+            for ranking in self.ranked_queries[query.lower()]["rankings"]:
+                rks[ranking["id"]] = ranking["relevance"]
 
-                return rks
+            return rks
             
         self.logger.error(f"did not find result rankings for {query}")
 
