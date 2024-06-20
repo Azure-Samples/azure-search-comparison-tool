@@ -90,6 +90,15 @@ def create_search_index_nhs_conditions():
                     vector_search_dimensions=1536,
                     vector_search_profile_name="hnswProfile",
                 ),
+                SimpleField(
+                    name="url",
+                    type=SearchFieldDataType.String,
+                    key=False,
+                    searchable=False,
+                    filterable=False,
+                    sortable=False,
+                    facetable=False,
+                )
             ],
             vector_search=VectorSearch(
                 algorithms=[HnswAlgorithmConfiguration(name="pdfHnsw")],
@@ -121,8 +130,11 @@ def create_search_index_nhs_conditions():
 def populate_search_index_nhs_conditions():
     print(f"Populating search index {AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME} with documents")
 
-    with open("data/conditions_1.json", "r", encoding="utf-8") as file:
-        items = json.load(file)
+    openai_client = AzureOpenAI(
+        api_key = get_openai_key(),  
+        api_version = "2024-02-01",
+        azure_endpoint = f"https://{AZURE_OPENAI_SERVICE}.openai.azure.com" 
+    )
 
     search_client = SearchClient(
         endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
@@ -138,51 +150,60 @@ def populate_search_index_nhs_conditions():
         decode_responses=True
     )
 
-    batched_treated_items = []
-    batch_size = 4
+    for file_name in ["data/conditions_1.json", "data/medicines_1.json", "data/articles_1.json"]:
 
-    for item in items:
+        with open(file_name, "r", encoding="utf-8") as file:
+            items = json.load(file)
 
-        treated_item = {
-            "id": item["id"],
-            "title": item["title"],
-            "description": item["description"]
-        }
+        print(f"loaded {len(items)} items from {file_name}")
 
-        item_key = f"{item['id']}_{AZURE_OPENAI_DEPLOYMENT_NAME}"
+        batched_treated_items = []
+        batch_size = 12
 
-        if redis_client.exists(item_key):
-            print(f"Document with id {item['id']} already exists in Redis cache, retrieving vectors.")
+        for item in items:
 
-            cached_item = json.loads(redis_client.get(item_key))
-            treated_item["titleVector"] = cached_item["titleVector"]
-            treated_item["descriptionVector"] = cached_item["descriptionVector"]
-        else:
-            print(f"Generating Azure OpenAI embeddings for {item["id"]} ...")
+            item_id = item["url_path"].strip('/').replace("/", "_")
 
-            treated_item["titleVector"] = generate_vectors(item["title"])
-            treated_item["descriptionVector"] = generate_vectors(item["description"])
-            # Store vectors in Redis
-            redis_client.set(item_key, json.dumps({"titleVector": treated_item["titleVector"], "descriptionVector": treated_item["descriptionVector"]}))
+            try:
+                existing_doc = search_client.get_document(item_id, ["id"])
 
-        batched_treated_items.append(treated_item)
+                print(f"{existing_doc["id"]} already exists. Skipping...")
 
-        if len(batched_treated_items) >= batch_size:
+                continue
+            except ResourceNotFoundError:
+                print(f"Adding entry for {item_id}")
 
-            print(f"Uploading batch of {len(batched_treated_items)} items ...")
+            treated_item = {
+                "id": item_id,
+                "title": item["title"],
+                "description": item["description"],
+                "url": item["url_path"]
+            }
+            
+            get_text_embeddings(
+                redis_client,
+                openai_client,
+                text_property_names=["title", "description"],
+                vector_property_names=["titleVector", "descriptionVector"],
+                item=treated_item,
+                deployment_name=AZURE_OPENAI_DEPLOYMENT_NAME)
 
+            batched_treated_items.append(treated_item)
+
+            if len(batched_treated_items) >= batch_size:
+
+                print(f"Uploading batch of {len(batched_treated_items)} items ...")
+
+                search_client.upload_documents(batched_treated_items)
+
+                batched_treated_items.clear()
+
+        if len(batched_treated_items) > 0:
+
+            print(f"Uploading final batch of {len(batched_treated_items)} items ...")
             search_client.upload_documents(batched_treated_items)
 
-            batched_treated_items.clear()
-
-    if len(batched_treated_items) >= 0:
-
-        print(f"Uploading final batch of {len(batched_treated_items)} items ...")
-        search_client.upload_documents(batched_treated_items)
-
-    print(
-        f"Uploaded {len(items[:11])} documents to index {AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME}"
-    )
+        print(f"Uploaded {len(items)} documents to index '{AZURE_SEARCH_NHS_CONDITIONS_INDEX_NAME}'")
 
 def delete_search_index(name: str):
     print(f"Deleting search index {name}")
@@ -191,6 +212,15 @@ def delete_search_index(name: str):
         credential=azure_credential,
     )
     index_client.delete_index(name)
+
+def clean_text(raw_text: str) -> str:
+
+    # nbsp = u'\xa0'
+    unicode_nbsp = "\\u00a0"
+    
+    soup = BeautifulSoup(raw_text.replace(unicode_nbsp, " ").encode().decode('unicode-escape'), 'html.parser')
+
+    return soup.get_text(separator=" ").replace("  "," ")
 
 def generate_vectors(text):
 
@@ -262,13 +292,6 @@ def get_text_embeddings(
 
         # Store vectors in Redis
         redis_client.set(item_key, json.dumps(redis_obj))
-
-def generate_azuresearch_id():
-    id = base64.urlsafe_b64encode(uuid.uuid4().bytes).decode("utf-8")
-    if id[0] == "_":
-        first_char = random.choice(string.ascii_letters + string.digits)
-        id = first_char + id[1:]
-    return id
 
 def get_openai_key():
 
@@ -503,11 +526,9 @@ def populate_search_index_nhs_combined_data():
 
             all_content = ""
 
-            nbsp = u'\xa0'
-
             for c in item["content"]:
 
-                aspect_header = c["value"]["aspect_header"]
+                aspect_header = clean_text(c["value"]["aspect_header"])
 
                 if len(aspect_header) > 0:
                     aspect_headers.append(aspect_header)
@@ -520,25 +541,15 @@ def populate_search_index_nhs_combined_data():
                 for inner_c in c["value"]["content"]:
 
                     if inner_c["type"] == "richtext":
-                        rich_text = inner_c["value"]
 
-                        soup = BeautifulSoup(rich_text, 'html.parser')
+                        content = clean_text(inner_c["value"])
 
-                        # print(soup.prettify())
-
-                        # specifically convert non breaking spaces to spaces
-                        t2 = soup.get_text(separator=" ").replace('\u00a0', ' ').replace(nbsp, ' ').replace('  ', ' ').replace('"','\\"')
-
-                        t3 = json.loads(f'"{t2}"')
-                        
-                        # print(t3)
-
-                        rich_text_content.append(t3)
+                        rich_text_content.append(content)
 
                         if len(all_content) == 0:
-                            all_content = t3
+                            all_content = content
                         else:
-                            all_content += " " + t3
+                            all_content += " " + content
 
             print(f"{treated_item["id"]} has {len(aspect_headers)} aspect headers and {len(short_descriptions)} short descriptions")
 
