@@ -94,6 +94,19 @@
         ]
     },
     {
+        "key": "text_2_title_weighted",
+        "title": "Text Only (BM25) Title Weighted",
+        "description": "Uses the Best Match 25 full text search algorithm with default `k1` and `b` parameters. `k1` controls the scaling function between the term frequency of each matching terms and the final relevance score of a document-query pair (0 - 3). By default, a value of 1.2 is used. `b` controls how the length of a document affects the relevance score (0 - 1). By default, a value of 0.75 is used. Index uses a full set of data from the data source",
+        "use_vector_search": false,
+        "data_set": "combined",
+        "scoring_profile_name": "title_weighted_100",
+        "output_field_names": [
+            "id",
+            "title",
+            "description"
+        ]
+    },
+    {
         "key": "exhaustive_vec_large",
         "title": "Vectors Only (large - Knn)",
         "description": "",
@@ -124,6 +137,24 @@
         "use_hybrid_search": true,
         "use_semantic_ranker": false,
         "open_ai_deployment_name": "embedding-large"
+    },
+    {
+        "_comment": "Scoring profile not currently having an effect on the search results",
+        "key": "hs_large_title_weighted",
+        "title": "Text & Vectors (large - Knn) - Title Weighted",
+        "description": "",
+        "use_vector_search": true,
+        "data_set": "combined",
+        "output_field_names": [
+            "id",
+            "title",
+            "description"
+        ],
+        "vector_field_names": "title_vector,description_vector,aspect_headers_vector,short_descriptions_vector,content_vector",
+        "use_hybrid_search": true,
+        "use_semantic_ranker": false,
+        "open_ai_deployment_name": "embedding-large",
+        "scoring_profile_name": "title_weighted_100"
     },
     {
         "key": "hssr_large",
