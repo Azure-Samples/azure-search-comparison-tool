@@ -1,12 +1,376 @@
 [
     {
-        "query": "endometriosis"
+        "query": "endometriosis",
+        "rankings": [
+            {
+                "url": "/nhsuk/conditions/endometriosis/",
+                "score": "0.06557377049180327868",
+                "rank": 1,
+                "id": "nhsuk_conditions_endometriosis",
+                "relevance": 3,
+                "title": "Endometriosis"
+            },
+            {
+                "url": "/nhsuk/conditions/ovarian-cyst/",
+                "score": "0.06309297912713472486",
+                "rank": 2,
+                "id": "nhsuk_conditions_ovarian-cyst",
+                "relevance": 0,
+                "title": "Ovarian cyst"
+            },
+            {
+                "url": "/nhsuk/conditions/polycystic-ovary-syndrome-pcos/",
+                "score": "0.05926251097453906936",
+                "rank": 3,
+                "id": "nhsuk_conditions_polycystic-ovary-syndrome-pcos",
+                "relevance": 0,
+                "title": "Polycystic ovary syndrome"
+            },
+            {
+                "url": "/nhsuk/conditions/pelvic-inflammatory-disease-pid/",
+                "score": "0.05910326086956521740",
+                "rank": 4,
+                "id": "nhsuk_conditions_pelvic-inflammatory-disease-pid",
+                "relevance": 0,
+                "title": "Pelvic inflammatory disease"
+            },
+            {
+                "url": "/nhsuk/conditions/pelvic-organ-prolapse/",
+                "score": "0.05777777777777777777",
+                "rank": 5,
+                "id": "nhsuk_conditions_pelvic-organ-prolapse",
+                "relevance": 0,
+                "title": "Pelvic organ prolapse"
+            },
+            {
+                "url": "/nhsuk/conditions/post-menopausal-bleeding/",
+                "score": "0.05685014704002045775",
+                "rank": 6,
+                "id": "nhsuk_conditions_post-menopausal-bleeding",
+                "relevance": 0,
+                "title": "Postmenopausal bleeding"
+            },
+            {
+                "url": "/nhsuk/conditions/pre-menstrual-syndrome/",
+                "score": "0.05516555516555516555",
+                "rank": 7,
+                "id": "nhsuk_conditions_pre-menstrual-syndrome",
+                "relevance": 0,
+                "title": "PMS (premenstrual syndrome)"
+            },
+            {
+                "url": "/nhsuk/conditions/adenomyosis/",
+                "score": "0.04664224664224664226",
+                "rank": 8,
+                "id": "nhsuk_conditions_adenomyosis",
+                "relevance": 0,
+                "title": "Adenomyosis"
+            },
+            {
+                "url": "/nhsuk/conditions/period-pain/",
+                "score": "0.04583053878828526717",
+                "rank": 9,
+                "id": "nhsuk_conditions_period-pain",
+                "relevance": 0,
+                "title": "Period pain"
+            },
+            {
+                "url": "/nhsuk/conditions/androgen-insensitivity-syndrome/",
+                "score": "0.04429804634257155839",
+                "rank": 10,
+                "id": "nhsuk_conditions_androgen-insensitivity-syndrome",
+                "relevance": 0,
+                "title": "Androgen insensitivity syndrome"
+            },
+            {
+                "url": "/nhsuk/conditions/womb-cancer/",
+                "score": "0.04354937640564301779",
+                "rank": 11,
+                "id": "nhsuk_conditions_womb-cancer",
+                "relevance": 0,
+                "title": "Womb (uterus) cancer"
+            },
+            {
+                "url": "/nhsuk/conditions/heavy-periods/",
+                "score": "0.04316239316239316240",
+                "rank": 12,
+                "id": "nhsuk_conditions_heavy-periods",
+                "relevance": 0,
+                "title": "Heavy periods"
+            },
+            {
+                "url": "/nhsuk/conditions/ovulation-pain/",
+                "score": "0.04254877542548775426",
+                "rank": 13,
+                "id": "nhsuk_conditions_ovulation-pain",
+                "relevance": 0,
+                "title": "Ovulation pain"
+            },
+            {
+                "url": "/nhsuk/conditions/hysterectomy/",
+                "score": "0.04060150375939849623",
+                "rank": 14,
+                "id": "nhsuk_conditions_hysterectomy",
+                "relevance": 0,
+                "title": "Hysterectomy"
+            },
+            {
+                "url": "/nhsuk/conditions/ectopic-pregnancy/",
+                "score": "0.04013377926421404682",
+                "rank": 15,
+                "id": "nhsuk_conditions_ectopic-pregnancy",
+                "relevance": 0,
+                "title": "Ectopic pregnancy"
+            },
+            {
+                "url": "/nhsuk/conditions/molar-pregnancy/",
+                "score": "0.03913192071086807928",
+                "rank": 16,
+                "id": "nhsuk_conditions_molar-pregnancy",
+                "relevance": 0,
+                "title": "Molar pregnancy"
+            },
+            {
+                "url": "/nhsuk/conditions/fibroids/",
+                "score": "0.03813696851671535215",
+                "rank": 17,
+                "id": "nhsuk_conditions_fibroids",
+                "relevance": 0,
+                "title": "Fibroids"
+            },
+            {
+                "url": "/nhsuk/conditions/persistent-trophoblastic-disease-choriocarcinoma/",
+                "score": "0.03798701298701298701",
+                "rank": 18,
+                "id": "nhsuk_conditions_persistent-trophoblastic-disease-choriocarcinoma",
+                "relevance": 0,
+                "title": "Persistent trophoblastic disease and choriocarcinoma"
+            },
+            {
+                "url": "/nhsuk/contraception/methods-of-contraception/progestogen-only-pill/what-is-it/",
+                "score": "0.03125000000000000000",
+                "rank": 19,
+                "id": "nhsuk_contraception_methods-of-contraception_progestogen-only-pill_what-is-it",
+                "relevance": 0,
+                "title": "What is the progestogen-only pill?"
+            },
+            {
+                "url": "/nhsuk/conditions/hysteroscopy/",
+                "score": "0.02837022132796780684",
+                "rank": 20,
+                "id": "nhsuk_conditions_hysteroscopy",
+                "relevance": 0,
+                "title": "Hysteroscopy"
+            },
+            {
+                "url": "/nhsuk/conditions/epididymitis/",
+                "score": "0.02758751902587519026",
+                "rank": 21,
+                "id": "nhsuk_conditions_epididymitis",
+                "relevance": 0,
+                "title": "Epididymitis"
+            },
+            {
+                "url": "/nhsuk/conditions/vulvodynia/",
+                "score": "0.02666666666666666666",
+                "rank": 22,
+                "id": "nhsuk_conditions_vulvodynia",
+                "relevance": 0,
+                "title": "Vulvodynia (vulval pain)"
+            },
+            {
+                "url": "/nhsuk/conditions/peritonitis/",
+                "score": "0.02601351351351351351",
+                "rank": 23,
+                "id": "nhsuk_conditions_peritonitis",
+                "relevance": 0,
+                "title": "Peritonitis"
+            }
+        ]
     },
     {
         "query": "fibromyalgia"
     },
     {
-        "query": "shingles"
+        "query": "shingles",
+        "rankings": [
+            {
+                "url": "/nhsuk/vaccinations/shingles-vaccine/",
+                "score": "0.06454091750396615547",
+                "rank": 1,
+                "id": "nhsuk_vaccinations_shingles-vaccine",
+                "relevance": 0,
+                "title": "Shingles vaccine"
+            },
+            {
+                "url": "/nhsuk/conditions/genital-herpes/",
+                "score": "0.06352408975359795033",
+                "rank": 2,
+                "id": "nhsuk_conditions_genital-herpes",
+                "relevance": 0,
+                "title": "Genital herpes"
+            },
+            {
+                "url": "/nhsuk/conditions/shingles/",
+                "score": "0.06329170565024610504",
+                "rank": 3,
+                "id": "nhsuk_conditions_shingles",
+                "relevance": 3,
+                "title": "Shingles"
+            },
+            {
+                "url": "/nhsuk/conditions/post-herpetic-neuralgia/",
+                "score": "0.06169529395335846949",
+                "rank": 4,
+                "id": "nhsuk_conditions_post-herpetic-neuralgia",
+                "relevance": 0,
+                "title": "Post-herpetic neuralgia"
+            },
+            {
+                "url": "/nhsuk/conditions/polymorphic-light-eruption/",
+                "score": "0.05726495726495726495",
+                "rank": 5,
+                "id": "nhsuk_conditions_polymorphic-light-eruption",
+                "relevance": 0,
+                "title": "Polymorphic light eruption"
+            },
+            {
+                "url": "/nhsuk/conditions/herpes-simplex-eye-infections/",
+                "score": "0.05652215451901233519",
+                "rank": 6,
+                "id": "nhsuk_conditions_herpes-simplex-eye-infections",
+                "relevance": 0,
+                "title": "Herpes simplex eye infections"
+            },
+            {
+                "url": "/nhsuk/conditions/herpetic-whitlow/",
+                "score": "0.05436228482003129891",
+                "rank": 7,
+                "id": "nhsuk_conditions_herpetic-whitlow",
+                "relevance": 0,
+                "title": "Herpetic whitlow (whitlow finger)"
+            },
+            {
+                "url": "/nhsuk/conditions/chickenpox/",
+                "score": "0.04712301587301587302",
+                "rank": 8,
+                "id": "nhsuk_conditions_chickenpox",
+                "relevance": 0,
+                "title": "Chickenpox"
+            },
+            {
+                "url": "/nhsuk/conditions/neonatal-herpes/",
+                "score": "0.04500891265597147951",
+                "rank": 9,
+                "id": "nhsuk_conditions_neonatal-herpes",
+                "relevance": 0,
+                "title": "Neonatal herpes (herpes in a baby)"
+            },
+            {
+                "url": "/nhsuk/conditions/henoch-schonlein-purpura-hsp/",
+                "score": "0.04437012263099219622",
+                "rank": 10,
+                "id": "nhsuk_conditions_henoch-schonlein-purpura-hsp",
+                "relevance": 0,
+                "title": "Henoch-Sch\u00f6nlein purpura (HSP)"
+            },
+            {
+                "url": "/nhsuk/conditions/psoriasis/",
+                "score": "0.04245472837022132797",
+                "rank": 11,
+                "id": "nhsuk_conditions_psoriasis",
+                "relevance": 0,
+                "title": "Psoriasis"
+            },
+            {
+                "url": "/nhsuk/conditions/lichen-sclerosus/",
+                "score": "0.04148176731622612387",
+                "rank": 12,
+                "id": "nhsuk_conditions_lichen-sclerosus",
+                "relevance": 0,
+                "title": "Lichen sclerosus"
+            },
+            {
+                "url": "/nhsuk/conditions/cold-sores/",
+                "score": "0.04137254901960784313",
+                "rank": 13,
+                "id": "nhsuk_conditions_cold-sores",
+                "relevance": 0,
+                "title": "Cold sores"
+            },
+            {
+                "url": "/nhsuk/conditions/pompholyx/",
+                "score": "0.04036036036036036035",
+                "rank": 14,
+                "id": "nhsuk_conditions_pompholyx",
+                "relevance": 0,
+                "title": "Pompholyx (dyshidrotic eczema)"
+            },
+            {
+                "url": "/nhsuk/conditions/heat-rash-prickly-heat/",
+                "score": "0.04013377926421404682",
+                "rank": 15,
+                "id": "nhsuk_conditions_heat-rash-prickly-heat",
+                "relevance": 0,
+                "title": "Heat rash (prickly heat)"
+            },
+            {
+                "url": "/nhsuk/conditions/rubella/",
+                "score": "0.03992537313432835821",
+                "rank": 16,
+                "id": "nhsuk_conditions_rubella",
+                "relevance": 0,
+                "title": "Rubella (german measles)"
+            },
+            {
+                "url": "/nhsuk/conditions/rashes-babies-and-children/",
+                "score": "0.03913630229419703103",
+                "rank": 17,
+                "id": "nhsuk_conditions_rashes-babies-and-children",
+                "relevance": 0,
+                "title": "Rashes in babies and children"
+            },
+            {
+                "url": "/nhsuk/conditions/bullous-pemphigoid/",
+                "score": "0.03896103896103896103",
+                "rank": 18,
+                "id": "nhsuk_conditions_bullous-pemphigoid",
+                "relevance": 0,
+                "title": "Bullous pemphigoid"
+            },
+            {
+                "url": "/nhsuk/conditions/impetigo/",
+                "score": "0.03781645569620253164",
+                "rank": 19,
+                "id": "nhsuk_conditions_impetigo",
+                "relevance": 0,
+                "title": "Impetigo"
+            },
+            {
+                "url": "/nhsuk/conditions/hives/",
+                "score": "0.03007688828584350973",
+                "rank": 20,
+                "id": "nhsuk_conditions_hives",
+                "relevance": 0,
+                "title": "Hives"
+            },
+            {
+                "url": "/nhsuk/conditions/erythema-multiforme/",
+                "score": "0.02941176470588235294",
+                "rank": 21,
+                "id": "nhsuk_conditions_erythema-multiforme",
+                "relevance": 0,
+                "title": "Erythema multiforme"
+            },
+            {
+                "url": "/nhsuk/conditions/measles/",
+                "score": "0.02758751902587519026",
+                "rank": 22,
+                "id": "nhsuk_conditions_measles",
+                "relevance": 0,
+                "title": "Measles"
+            }
+        ]
     },
     {
         "query": "adhd symptoms"
@@ -21,7 +385,185 @@
         "query": "pneumonia"
     },
     {
-        "query": "scarlet fever"
+        "query": "scarlet fever",
+        "rankings": [
+            {
+                "url": "/nhsuk/conditions/scarlet-fever/",
+                "score": "0.06557377049180327868",
+                "rank": 1,
+                "id": "nhsuk_conditions_scarlet-fever",
+                "relevance": 3,
+                "title": "Scarlet fever"
+            },
+            {
+                "url": "/nhsuk/conditions/rashes-babies-and-children/",
+                "score": "0.06155998851894374283",
+                "rank": 2,
+                "id": "nhsuk_conditions_rashes-babies-and-children",
+                "relevance": 0,
+                "title": "Rashes in babies and children"
+            },
+            {
+                "url": "/nhsuk/conditions/rheumatic-fever/",
+                "score": "0.05874262670037317926",
+                "rank": 3,
+                "id": "nhsuk_conditions_rheumatic-fever",
+                "relevance": 0,
+                "title": "Rheumatic fever"
+            },
+            {
+                "url": "/nhsuk/conditions/rosacea/",
+                "score": "0.05827179356591121297",
+                "rank": 4,
+                "id": "nhsuk_conditions_rosacea",
+                "relevance": 0,
+                "title": "Rosacea"
+            },
+            {
+                "url": "/nhsuk/conditions/erythema-multiforme/",
+                "score": "0.05782942547648430002",
+                "rank": 5,
+                "id": "nhsuk_conditions_erythema-multiforme",
+                "relevance": 0,
+                "title": "Erythema multiforme"
+            },
+            {
+                "url": "/nhsuk/conditions/henoch-schonlein-purpura-hsp/",
+                "score": "0.05736181796662326902",
+                "rank": 6,
+                "id": "nhsuk_conditions_henoch-schonlein-purpura-hsp",
+                "relevance": 0,
+                "title": "Henoch-Sch\u00f6nlein purpura (HSP)"
+            },
+            {
+                "url": "/nhsuk/conditions/erythromelalgia/",
+                "score": "0.05565103029834168660",
+                "rank": 7,
+                "id": "nhsuk_conditions_erythromelalgia",
+                "relevance": 0,
+                "title": "Erythromelalgia"
+            },
+            {
+                "url": "/nhsuk/conditions/diphtheria/",
+                "score": "0.04787506400409626217",
+                "rank": 8,
+                "id": "nhsuk_conditions_diphtheria",
+                "relevance": 0,
+                "title": "Diphtheria"
+            },
+            {
+                "url": "/nhsuk/conditions/impetigo/",
+                "score": "0.04675081813931743806",
+                "rank": 9,
+                "id": "nhsuk_conditions_impetigo",
+                "relevance": 0,
+                "title": "Impetigo"
+            },
+            {
+                "url": "/nhsuk/conditions/kawasaki-disease/",
+                "score": "0.04547574626865671642",
+                "rank": 10,
+                "id": "nhsuk_conditions_kawasaki-disease",
+                "relevance": 0,
+                "title": "Kawasaki disease"
+            },
+            {
+                "url": "/nhsuk/conditions/glandular-fever/",
+                "score": "0.04340277777777777778",
+                "rank": 11,
+                "id": "nhsuk_conditions_glandular-fever",
+                "relevance": 0,
+                "title": "Glandular fever"
+            },
+            {
+                "url": "/nhsuk/conditions/heat-rash-prickly-heat/",
+                "score": "0.04332052923602219378",
+                "rank": 12,
+                "id": "nhsuk_conditions_heat-rash-prickly-heat",
+                "relevance": 0,
+                "title": "Heat rash (prickly heat)"
+            },
+            {
+                "url": "/nhsuk/conditions/febrile-seizures/",
+                "score": "0.04231884057971014493",
+                "rank": 13,
+                "id": "nhsuk_conditions_febrile-seizures",
+                "relevance": 0,
+                "title": "Febrile seizures"
+            },
+            {
+                "url": "/nhsuk/conditions/mrsa/",
+                "score": "0.04170040485829959514",
+                "rank": 14,
+                "id": "nhsuk_conditions_mrsa",
+                "relevance": 0,
+                "title": "MRSA"
+            },
+            {
+                "url": "/nhsuk/conditions/necrotising-fasciitis/",
+                "score": "0.03989726027397260274",
+                "rank": 15,
+                "id": "nhsuk_conditions_necrotising-fasciitis",
+                "relevance": 0,
+                "title": "Necrotising fasciitis"
+            },
+            {
+                "url": "/nhsuk/conditions/cellulitis/",
+                "score": "0.03960216998191681735",
+                "rank": 16,
+                "id": "nhsuk_conditions_cellulitis",
+                "relevance": 0,
+                "title": "Cellulitis"
+            },
+            {
+                "url": "/nhsuk/conditions/rubella/",
+                "score": "0.02904040404040404041",
+                "rank": 17,
+                "id": "nhsuk_conditions_rubella",
+                "relevance": 0,
+                "title": "Rubella (german measles)"
+            },
+            {
+                "url": "/nhsuk/conditions/q-fever/",
+                "score": "0.02721214365049981488",
+                "rank": 18,
+                "id": "nhsuk_conditions_q-fever",
+                "relevance": 0,
+                "title": "Q fever"
+            },
+            {
+                "url": "/nhsuk/conditions/typhoid-fever/",
+                "score": "0.02666666666666666666",
+                "rank": 19,
+                "id": "nhsuk_conditions_typhoid-fever",
+                "relevance": 0,
+                "title": "Typhoid fever"
+            },
+            {
+                "url": "/nhsuk/conditions/baby/health/colds-coughs-and-ear-infections-in-children/",
+                "score": "0.02597402597402597402",
+                "rank": 20,
+                "id": "nhsuk_conditions_baby_health_colds-coughs-and-ear-infections-in-children",
+                "relevance": 0,
+                "title": "Colds, coughs and ear infections in children"
+            },
+            {
+                "url": "/nhsuk/conditions/pityriasis-rosea/",
+                "score": "0.02564524083511425283",
+                "rank": 21,
+                "id": "nhsuk_conditions_pityriasis-rosea",
+                "relevance": 0,
+                "title": "Pityriasis rosea"
+            },
+            {
+                "url": "/nhsuk/conditions/orf/",
+                "score": "0.02564102564102564102",
+                "rank": 22,
+                "id": "nhsuk_conditions_orf",
+                "relevance": 0,
+                "title": "Orf"
+            }
+        ]
     },
     {
         "query": "plantar fasciitis"
@@ -36,7 +578,169 @@
         "query": "lyme disease"
     },
     {
-        "query": "hydrocortisone cream"
+        "query": "hydrocortisone cream",
+        "rankings": [
+            {
+                "url": "/nhsuk/medicines/hydrocortisone/",
+                "score": "0.06504494976203067160",
+                "rank": 1,
+                "id": "nhsuk_medicines_hydrocortisone",
+                "relevance": 0,
+                "title": "Hydrocortisone"
+            },
+            {
+                "url": "/nhsuk/conditions/topical-steroids/",
+                "score": "0.06305645352347326349",
+                "rank": 2,
+                "id": "nhsuk_conditions_topical-steroids",
+                "relevance": 0,
+                "title": "Topical corticosteroids"
+            },
+            {
+                "url": "/nhsuk/medicines/hydrocortisone-rectal-foam/",
+                "score": "0.05884554042448779292",
+                "rank": 3,
+                "id": "nhsuk_medicines_hydrocortisone-rectal-foam",
+                "relevance": 0,
+                "title": "Hydrocortisone rectal foam"
+            },
+            {
+                "url": "/nhsuk/conditions/steroids/",
+                "score": "0.05641025641025641026",
+                "rank": 4,
+                "id": "nhsuk_conditions_steroids",
+                "relevance": 0,
+                "title": "Steroids"
+            },
+            {
+                "url": "/nhsuk/conditions/pompholyx/",
+                "score": "0.05426468722243370130",
+                "rank": 5,
+                "id": "nhsuk_conditions_pompholyx",
+                "relevance": 0,
+                "title": "Pompholyx (dyshidrotic eczema)"
+            },
+            {
+                "url": "/nhsuk/medicines/acrivastine/",
+                "score": "0.05194394213381555153",
+                "rank": 6,
+                "id": "nhsuk_medicines_acrivastine",
+                "relevance": 0,
+                "title": "Acrivastine"
+            },
+            {
+                "url": "/nhsuk/conditions/steroid-tablets/",
+                "score": "0.04813947436898256571",
+                "rank": 7,
+                "id": "nhsuk_conditions_steroid-tablets",
+                "relevance": 0,
+                "title": "Steroid tablets"
+            },
+            {
+                "url": "/nhsuk/conditions/steroid-injections/",
+                "score": "0.04687500000000000000",
+                "rank": 8,
+                "id": "nhsuk_conditions_steroid-injections",
+                "relevance": 0,
+                "title": "Steroid injections"
+            },
+            {
+                "url": "/nhsuk/conditions/emollients/",
+                "score": "0.04327731092436974789",
+                "rank": 9,
+                "id": "nhsuk_conditions_emollients",
+                "relevance": 0,
+                "title": "Emollients"
+            },
+            {
+                "url": "/nhsuk/medicines/isotretinoin-gel/",
+                "score": "0.04307001428863033273",
+                "rank": 10,
+                "id": "nhsuk_medicines_isotretinoin-gel",
+                "relevance": 0,
+                "title": "Isotretinoin gel (Isotrex)"
+            },
+            {
+                "url": "/nhsuk/conditions/discoid-eczema/",
+                "score": "0.04256965944272445820",
+                "rank": 11,
+                "id": "nhsuk_conditions_discoid-eczema",
+                "relevance": 0,
+                "title": "Discoid eczema"
+            },
+            {
+                "url": "/nhsuk/conditions/sunburn/",
+                "score": "0.04227053140096618358",
+                "rank": 12,
+                "id": "nhsuk_conditions_sunburn",
+                "relevance": 0,
+                "title": "Sunburn"
+            },
+            {
+                "url": "/nhsuk/conditions/cosmetic-procedures/non-surgical-cosmetic-procedures/skin-lightening/",
+                "score": "0.04195240016135538523",
+                "rank": 13,
+                "id": "nhsuk_conditions_cosmetic-procedures_non-surgical-cosmetic-procedures_skin-lightening",
+                "relevance": 0,
+                "title": "Skin lightening"
+            },
+            {
+                "url": "/nhsuk/conditions/hidradenitis-suppurativa/",
+                "score": "0.04112554112554112554",
+                "rank": 14,
+                "id": "nhsuk_conditions_hidradenitis-suppurativa",
+                "relevance": 0,
+                "title": "Hidradenitis suppurativa (HS)"
+            },
+            {
+                "url": "/nhsuk/conditions/cushings-syndrome/",
+                "score": "0.03920534458509142053",
+                "rank": 15,
+                "id": "nhsuk_conditions_cushings-syndrome",
+                "relevance": 0,
+                "title": "Cushing's syndrome"
+            },
+            {
+                "url": "/nhsuk/conditions/contact-dermatitis/",
+                "score": "0.03897435897435897435",
+                "rank": 16,
+                "id": "nhsuk_conditions_contact-dermatitis",
+                "relevance": 0,
+                "title": "Contact dermatitis"
+            },
+            {
+                "url": "/nhsuk/conditions/actinic-keratoses/",
+                "score": "0.02985074626865671642",
+                "rank": 17,
+                "id": "nhsuk_conditions_actinic-keratoses",
+                "relevance": 0,
+                "title": "Actinic keratoses (solar keratoses)"
+            },
+            {
+                "url": "/nhsuk/conditions/keratosis-pilaris/",
+                "score": "0.02816901408450704226",
+                "rank": 18,
+                "id": "nhsuk_conditions_keratosis-pilaris",
+                "relevance": 0,
+                "title": "Keratosis pilaris"
+            },
+            {
+                "url": "/nhsuk/conditions/genital-herpes/",
+                "score": "0.02739726027397260274",
+                "rank": 19,
+                "id": "nhsuk_conditions_genital-herpes",
+                "relevance": 0,
+                "title": "Genital herpes"
+            },
+            {
+                "url": "/nhsuk/conditions/steroid-inhalers/",
+                "score": "0.02631578947368421052",
+                "rank": 20,
+                "id": "nhsuk_conditions_steroid-inhalers",
+                "relevance": 0,
+                "title": "Steroid inhalers"
+            }
+        ]
     },
     {
         "query": "bowel cancer symptoms"

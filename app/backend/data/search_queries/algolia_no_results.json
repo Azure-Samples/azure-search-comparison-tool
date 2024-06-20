@@ -1,92 +1,227 @@
 [
     {
         "query": "ozempic",
-        "rankings": [
-            {
-                "id": "unknown",
-                "relevance": 0.01
-            }
-        ]
+        "rankings": []
     },
     {
         "query": "paronychia",
-        "rankings": [
-            {
-                "id": "unknown",
-                "relevance": 0.01
-            }
-        ]
+        "rankings": []
     },
     {
         "query": "famotidine",
-        "rankings": [
-            {
-                "id": "unknown",
-                "relevance": 0.01
-            }
-        ]
+        "rankings": []
     },
     {
         "query": "cryptosporidium",
-        "rankings": [
-            {
-                "id": "unknown",
-                "relevance": 0.01
-            }
-        ]
+        "rankings": []
     },
     {
         "query": "podiatry",
-        "rankings": [
-            {
-                "id": "unknown",
-                "relevance": 0.01
-            }
-        ]
+        "rankings": []
     },
     {
         "query": "gastroenteritis",
         "rankings": [
             {
-                "id": "unknown",
-                "relevance": 0.01
+                "url": "/nhsuk/conditions/gastritis/",
+                "score": "0.06254728877679697353",
+                "rank": 1,
+                "id": "nhsuk_conditions_gastritis",
+                "relevance": 0,
+                "title": "Gastritis"
+            },
+            {
+                "url": "/nhsuk/conditions/chronic-pancreatitis/",
+                "score": "0.06038851351351351351",
+                "rank": 2,
+                "id": "nhsuk_conditions_chronic-pancreatitis",
+                "relevance": 0,
+                "title": "Chronic pancreatitis"
+            },
+            {
+                "url": "/nhsuk/conditions/peritonitis/",
+                "score": "0.05972811527646050684",
+                "rank": 3,
+                "id": "nhsuk_conditions_peritonitis",
+                "relevance": 0,
+                "title": "Peritonitis"
+            },
+            {
+                "url": "/nhsuk/conditions/guillain-barre-syndrome/",
+                "score": "0.05937139228815516047",
+                "rank": 4,
+                "id": "nhsuk_conditions_guillain-barre-syndrome",
+                "relevance": 0,
+                "title": "Guillain-Barr\u00e9 syndrome"
+            },
+            {
+                "url": "/nhsuk/conditions/stomach-ache/",
+                "score": "0.05557186344857577734",
+                "rank": 5,
+                "id": "nhsuk_conditions_stomach-ache",
+                "relevance": 2,
+                "title": "Stomach ache"
+            },
+            {
+                "url": "/nhsuk/conditions/crohns-disease/",
+                "score": "0.05522788729082572402",
+                "rank": 6,
+                "id": "nhsuk_conditions_crohns-disease",
+                "relevance": 0,
+                "title": "Crohn's disease"
+            },
+            {
+                "url": "/nhsuk/conditions/inflammatory-bowel-disease/",
+                "score": "0.05481884057971014493",
+                "rank": 7,
+                "id": "nhsuk_conditions_inflammatory-bowel-disease",
+                "relevance": 0,
+                "title": "Inflammatory bowel disease"
+            },
+            {
+                "url": "/nhsuk/conditions/ulcerative-colitis/",
+                "score": "0.04838709677419354839",
+                "rank": 8,
+                "id": "nhsuk_conditions_ulcerative-colitis",
+                "relevance": 0,
+                "title": "Ulcerative colitis"
+            },
+            {
+                "url": "/nhsuk/conditions/acute-pancreatitis/",
+                "score": "0.04761904761904761906",
+                "rank": 9,
+                "id": "nhsuk_conditions_acute-pancreatitis",
+                "relevance": 0,
+                "title": "Acute pancreatitis"
+            },
+            {
+                "url": "/nhsuk/conditions/stomach-ulcer/",
+                "score": "0.04545454545454545456",
+                "rank": 10,
+                "id": "nhsuk_conditions_stomach-ulcer",
+                "relevance": 0,
+                "title": "Stomach ulcer"
+            },
+            {
+                "url": "/nhsuk/conditions/gastrectomy/",
+                "score": "0.04327731092436974789",
+                "rank": 11,
+                "id": "nhsuk_conditions_gastrectomy",
+                "relevance": 0,
+                "title": "Gastrectomy"
+            },
+            {
+                "url": "/nhsuk/conditions/indigestion/",
+                "score": "0.04236746859697679369",
+                "rank": 12,
+                "id": "nhsuk_conditions_indigestion",
+                "relevance": 0,
+                "title": "Indigestion"
+            },
+            {
+                "url": "/nhsuk/conditions/irritable-bowel-syndrome-ibs/",
+                "score": "0.04132690882134914752",
+                "rank": 13,
+                "id": "nhsuk_conditions_irritable-bowel-syndrome-ibs",
+                "relevance": 0,
+                "title": "Irritable bowel syndrome (IBS)"
+            },
+            {
+                "url": "/nhsuk/live-well/eat-well/digestive-health/five-lifestyle-tips-for-a-healthy-tummy/",
+                "score": "0.04129129129129129129",
+                "rank": 14,
+                "id": "nhsuk_live-well_eat-well_digestive-health_five-lifestyle-tips-for-a-healthy-tummy",
+                "relevance": 0,
+                "title": "5 lifestyle tips for a healthy tummy"
+            },
+            {
+                "url": "/nhsuk/conditions/listeriosis/",
+                "score": "0.04001404001404001403",
+                "rank": 15,
+                "id": "nhsuk_conditions_listeriosis",
+                "relevance": 0,
+                "title": "Listeriosis"
+            },
+            {
+                "url": "/nhsuk/conditions/coeliac-disease/",
+                "score": "0.03782051282051282051",
+                "rank": 16,
+                "id": "nhsuk_conditions_coeliac-disease",
+                "relevance": 0,
+                "title": "Coeliac disease"
+            },
+            {
+                "url": "/nhsuk/conditions/giardiasis/",
+                "score": "0.03041474654377880184",
+                "rank": 17,
+                "id": "nhsuk_conditions_giardiasis",
+                "relevance": 0,
+                "title": "Giardiasis"
+            },
+            {
+                "url": "/nhsuk/conditions/hepatitis/",
+                "score": "0.02758360098242962403",
+                "rank": 18,
+                "id": "nhsuk_conditions_hepatitis",
+                "relevance": 0,
+                "title": "Hepatitis"
+            },
+            {
+                "url": "/nhsuk/conditions/cyclical-vomiting-syndrome/",
+                "score": "0.02739726027397260274",
+                "rank": 19,
+                "id": "nhsuk_conditions_cyclical-vomiting-syndrome",
+                "relevance": 0,
+                "title": "Cyclical vomiting syndrome"
+            },
+            {
+                "url": "/nhsuk/conditions/diverticular-disease-and-diverticulitis/",
+                "score": "0.02666666666666666666",
+                "rank": 20,
+                "id": "nhsuk_conditions_diverticular-disease-and-diverticulitis",
+                "relevance": 0,
+                "title": "Diverticular disease and diverticulitis"
+            },
+            {
+                "url": "/nhsuk/live-well/eat-well/digestive-health/good-foods-to-help-your-digestion/",
+                "score": "0.02631578947368421052",
+                "rank": 21,
+                "id": "nhsuk_live-well_eat-well_digestive-health_good-foods-to-help-your-digestion",
+                "relevance": 0,
+                "title": "Good foods to help your digestion"
+            },
+            {
+                "url": "/nhsuk/conditions/gastroscopy/",
+                "score": "0.02564102564102564102",
+                "rank": 22,
+                "id": "nhsuk_conditions_gastroscopy",
+                "relevance": 0,
+                "title": "Gastroscopy"
+            },
+            {
+                "url": "/nhsuk/conditions/endoscopy/",
+                "score": "0.02531645569620253164",
+                "rank": 23,
+                "id": "nhsuk_conditions_endoscopy",
+                "relevance": 0,
+                "title": "Endoscopy"
             }
         ]
     },
     {
         "query": "wegovy",
-        "rankings": [
-            {
-                "id": "unknown",
-                "relevance": 0.01
-            }
-        ]
+        "rankings": []
     },
     {
         "query": "semaglutide",
-        "rankings": [
-            {
-                "id": "unknown",
-                "relevance": 0.01
-            }
-        ]
+        "rankings": []
     },
     {
         "query": "bradycardia",
-        "rankings": [
-            {
-                "id": "unknown",
-                "relevance": 0.01
-            }
-        ]
+        "rankings": []
     },
     {
         "query": "myocarditis",
-        "rankings": [
-            {
-                "id": "unknown",
-                "relevance": 0.01
-            }
-        ]
+        "rankings": []
     }
 ]

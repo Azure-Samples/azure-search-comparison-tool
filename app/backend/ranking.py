@@ -40,35 +40,33 @@ class Ranking:
 
         for result in results:
 
+            self.logger.debug("result: %s", result)
+
             result_rankings[result] = ideal_rankings[result] if result in ideal_rankings else 0
 
         self.logger.debug("result rankings => %s", result_rankings)
 
-        actual_dcg_3 = self.__dcg(list(result_rankings.values()),3)
-        ideal_dcg_3 = self.__dcg(list(ideal_rankings.values()),3)
+        idcg_10 = self.__dcg(list(ideal_rankings.values()))
+        dcg_10 = self.__dcg(list(result_rankings.values()))
 
-        actual_dcg_5 = self.__dcg(list(result_rankings.values()),5)
-        ideal_dcg_5 = self.__dcg(list(ideal_rankings.values()),5)
+        ndcg_10 = dcg_10 / idcg_10 if idcg_10 > 0 else 0.0
 
-        actual_dcg_10 = self.__dcg(list(result_rankings.values()),10)
-        ideal_dcg_10 = self.__dcg(list(ideal_rankings.values()),10)
+        idcg_3 = self.__dcg(list(ideal_rankings.values()), k=3)
+        dcg_3 = self.__dcg(list(result_rankings.values()), k=3)
 
-        # Calculate the Normalized Discounted Cumulative Gain (NDCG).
-        ndcg_result_3 = actual_dcg_3 / ideal_dcg_3 if ideal_dcg_3 > 0 else 0.0
-        ndcg_result_5 = actual_dcg_5 / ideal_dcg_5 if ideal_dcg_5 > 0 else 0.0
-        ndcg_result_10 = actual_dcg_10 / ideal_dcg_10 if ideal_dcg_10 > 0 else 0.0
+        ndcg_3 = dcg_3 / idcg_3 if idcg_3 > 0 else 0.0
 
-        self.logger.debug(f"NDCG@3:{ndcg_result_3} actual dcg:{actual_dcg_3} ideal dcg:{ideal_dcg_3}")
-        self.logger.debug(f"NDCG@5:{ndcg_result_5} actual dcg:{actual_dcg_5} ideal dcg:{ideal_dcg_5}")
-        self.logger.debug(f"NDCG@10:{ndcg_result_10} actual dcg:{actual_dcg_10} ideal dcg:{ideal_dcg_10}")
-
+        self.logger.debug(f"NDCG@3: {ndcg_3} - NDCG@10: {ndcg_10}")
+        
         return {
-            "ndcg": ndcg_result_5,
-            "ndcg@3": ndcg_result_3,
-            "ndcg@10": ndcg_result_10,
+            "ndcg@3": ndcg_3,
+            "ndcg@10": ndcg_10,
             "ideal_rankings": ideal_rankings,
             "result_rankings": result_rankings
         }
+    
+    def __get_relevance(self, x):
+        return x["relevance"]
     
     def __get_ideal_rankings(self, query: str) -> dict | None:
 
@@ -76,7 +74,11 @@ class Ranking:
 
             rks = {}
 
-            for ranking in self.ranked_queries[query.lower()]["rankings"]:
+            for ranking in sorted(
+                self.ranked_queries[query.lower()]["rankings"],
+                key=self.__get_relevance,
+                reverse=True)[:10]:
+
                 rks[ranking["id"]] = ranking["relevance"]
 
             return rks
@@ -85,17 +87,25 @@ class Ranking:
 
         return None
 
-    def __dcg(self, relevance_scores, k: int):
-        """
-        Calculate the Discounted Cumulative Gain (DCG) for a given ranking.
-        :param relevance_scores: List of relevance scores in the ranked order.
-        :param k: Number of results to consider (cut-off at position k).
-        :return: DCG value.
-        """
+    def __dcg(self, relevance_scores: list, k = 10):
 
-        relevance_scores = np.asfarray(relevance_scores)[:k]
+        # convert to array of floats
+        f_relevance_scores = np.asfarray(relevance_scores)[:k]
 
-        if relevance_scores.size:
-            return np.sum((2**relevance_scores - 1) / np.log2(np.arange(2, relevance_scores.size + 2)))
-        
-        return 0.0
+        if len(f_relevance_scores) < k:
+
+            self.logger.warn("padding relevance scores with zeros")
+
+            i = iter(f_relevance_scores)
+            f_relevance_scores = np.asfarray([next(i, 0) for _ in range(k)])
+
+        dcg = 0.0
+
+        for i, score in enumerate(f_relevance_scores):
+            gain = score / np.log2(i + 2)
+
+            dcg += gain
+
+        self.logger.info(f"dcg for {f_relevance_scores} => {dcg}")
+
+        return dcg

@@ -25,11 +25,13 @@ class Results:
 
         db = self.__connect()
 
+        search_query = search_query.lower()
+
         result_id = self.__get_result_id(db, search_query, approach)
 
         if result_id is not None:
             self.logger.info(f"Deleting existing result for {search_query} / {approach}")
-            self.__delete_result_(result_id)
+            self.__delete_result_(db, result_id)
 
         result_id = self.__add_result(db, search_query, approach, ndcg3, ndcg10)
 
@@ -42,6 +44,8 @@ class Results:
         """
 
         db = self.__connect()
+
+        search_query = search_query.lower()
 
         result_id = self.__get_result_id(db, search_query, approach)
 

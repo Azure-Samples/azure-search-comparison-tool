@@ -35,7 +35,7 @@ for filename in glob.glob(os.path.join(path, '*.json')):
             for j in results_db_connection.all(f"select * from public.poc_combined_rrf('{query}')"):
                 url = "/" + j[0].replace("_", "/") + "/"
                 list.append(url)
-                output.append({"url": url, "score": str(j[1]), "rank": rank})
+                output.append({"url": url, "score": str(j[1]), "rank": rank, "id": j[0], "relevance": 0})
                 rank += 1
 
                 sql = f"""
@@ -52,7 +52,7 @@ for filename in glob.glob(os.path.join(path, '*.json')):
                     url = page[2]
                     output_result = next((item for item in output if item.get("url") == url), None)
                     output_result["title"] = page[1]
-                    output_result["slug"] = page[0]
+                    # output_result["slug"] = page[0]
 
             # Save the JSON data to a file
             with open(jsonFileName, 'w') as file:

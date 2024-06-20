@@ -9,7 +9,177 @@
         "query": "ghic"
     },
     {
-        "query": "adhd"
+        "query": "adhd",
+        "rankings": [
+            {
+                "url": "/nhsuk/conditions/attention-deficit-hyperactivity-disorder-adhd/",
+                "score": "0.06557377049180327868",
+                "rank": 1,
+                "id": "nhsuk_conditions_attention-deficit-hyperactivity-disorder-adhd",
+                "relevance": 3,
+                "title": "Attention deficit hyperactivity disorder (ADHD)"
+            },
+            {
+                "url": "/nhsuk/conditions/addisons-disease/",
+                "score": "0.06258894686907020873",
+                "rank": 2,
+                "id": "nhsuk_conditions_addisons-disease",
+                "relevance": 0,
+                "title": "Addison's disease"
+            },
+            {
+                "url": "/nhsuk/conditions/auditory-processing-disorder/",
+                "score": "0.05917366946778711485",
+                "rank": 3,
+                "id": "nhsuk_conditions_auditory-processing-disorder",
+                "relevance": 0,
+                "title": "Auditory processing disorder (APD)"
+            },
+            {
+                "url": "/nhsuk/conditions/overactive-thyroid-hyperthyroidism/",
+                "score": "0.05913461538461538462",
+                "rank": 4,
+                "id": "nhsuk_conditions_overactive-thyroid-hyperthyroidism",
+                "relevance": 0,
+                "title": "Overactive thyroid (hyperthyroidism)"
+            },
+            {
+                "url": "/nhsuk/mental-health/conditions/panic-disorder/",
+                "score": "0.05635456575066839392",
+                "rank": 5,
+                "id": "nhsuk_mental-health_conditions_panic-disorder",
+                "relevance": 0,
+                "title": "Panic disorder"
+            },
+            {
+                "url": "/nhsuk/mental-health/conditions/dissociative-disorders/",
+                "score": "0.05321939586645468998",
+                "rank": 6,
+                "id": "nhsuk_mental-health_conditions_dissociative-disorders",
+                "relevance": 0,
+                "title": "Dissociative disorders"
+            },
+            {
+                "url": "/nhsuk/medicines/methylphenidate-children/",
+                "score": "0.04689826302729528537",
+                "rank": 7,
+                "id": "nhsuk_medicines_methylphenidate-children",
+                "relevance": 0,
+                "title": "Methylphenidate for children"
+            },
+            {
+                "url": "/nhsuk/conditions/learning-disabilities/",
+                "score": "0.04667140488036010425",
+                "rank": 8,
+                "id": "nhsuk_conditions_learning-disabilities",
+                "relevance": 2,
+                "title": "Learning disabilities"
+            },
+            {
+                "url": "/nhsuk/medicines/methylphenidate-adults/",
+                "score": "0.04592803030303030304",
+                "rank": 9,
+                "id": "nhsuk_medicines_methylphenidate-adults",
+                "relevance": 0,
+                "title": "Methylphenidate for adults"
+            },
+            {
+                "url": "/nhsuk/conditions/chronic-traumatic-encephalopathy/",
+                "score": "0.04511453950444132773",
+                "rank": 10,
+                "id": "nhsuk_conditions_chronic-traumatic-encephalopathy",
+                "relevance": 0,
+                "title": "Chronic traumatic encephalopathy"
+            },
+            {
+                "url": "/nhsuk/conditions/baby/babys-development/behaviour/dealing-with-child-behaviour-problems/",
+                "score": "0.04283775925566970343",
+                "rank": 11,
+                "id": "nhsuk_conditions_baby_babys-development_behaviour_dealing-with-child-behaviour-problems",
+                "relevance": 1,
+                "title": "Dealing with child behaviour problems"
+            },
+            {
+                "url": "/nhsuk/mental-health/children-and-young-adults/advice-for-parents/anxiety-disorders-in-children/",
+                "score": "0.04278187565858798736",
+                "rank": 12,
+                "id": "nhsuk_mental-health_children-and-young-adults_advice-for-parents_anxiety-disorders-in-children",
+                "relevance": 1,
+                "title": "Anxiety disorders in children"
+            },
+            {
+                "url": "/nhsuk/mental-health/conditions/personality-disorder/",
+                "score": "0.04227053140096618358",
+                "rank": 13,
+                "id": "nhsuk_mental-health_conditions_personality-disorder",
+                "relevance": 0,
+                "title": "Personality disorders"
+            },
+            {
+                "url": "/nhsuk/mental-health/children-and-young-adults/advice-for-parents/worried-about-your-teenager/",
+                "score": "0.04225352112676056339",
+                "rank": 14,
+                "id": "nhsuk_mental-health_children-and-young-adults_advice-for-parents_worried-about-your-teenager",
+                "relevance": 1,
+                "title": "Worried about your teenager?"
+            },
+            {
+                "url": "/nhsuk/conditions/tourettes-syndrome/",
+                "score": "0.04159203980099502487",
+                "rank": 15,
+                "id": "nhsuk_conditions_tourettes-syndrome",
+                "relevance": 0,
+                "title": "Tourette's syndrome"
+            },
+            {
+                "url": "/nhsuk/conditions/underactive-thyroid-hypothyroidism/",
+                "score": "0.04146730462519936204",
+                "rank": 16,
+                "id": "nhsuk_conditions_underactive-thyroid-hypothyroidism",
+                "relevance": 0,
+                "title": "Underactive thyroid (hypothyroidism)"
+            },
+            {
+                "url": "/nhsuk/conditions/mcadd/",
+                "score": "0.04131274131274131273",
+                "rank": 17,
+                "id": "nhsuk_conditions_mcadd",
+                "relevance": 0,
+                "title": "MCADD"
+            },
+            {
+                "url": "/nhsuk/mental-health/conditions/antisocial-personality-disorder/",
+                "score": "0.03862803862803862803",
+                "rank": 18,
+                "id": "nhsuk_mental-health_conditions_antisocial-personality-disorder",
+                "relevance": 0,
+                "title": "Antisocial personality disorder"
+            },
+            {
+                "url": "/nhsuk/mental-health/conditions/health-anxiety/",
+                "score": "0.03847402597402597402",
+                "rank": 19,
+                "id": "nhsuk_mental-health_conditions_health-anxiety",
+                "relevance": 0,
+                "title": "Health anxiety"
+            },
+            {
+                "url": "/nhsuk/mental-health/conditions/body-dysmorphia/",
+                "score": "0.02649122807017543859",
+                "rank": 20,
+                "id": "nhsuk_mental-health_conditions_body-dysmorphia",
+                "relevance": 0,
+                "title": "Body dysmorphic disorder (BDD)"
+            },
+            {
+                "url": "/nhsuk/mental-health/conditions/hoarding-disorder/",
+                "score": "0.02531645569620253164",
+                "rank": 21,
+                "id": "nhsuk_mental-health_conditions_hoarding-disorder",
+                "relevance": 0,
+                "title": "Hoarding disorder"
+            }
+        ]
     },
     {
         "query": "bmi"
