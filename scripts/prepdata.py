@@ -430,7 +430,15 @@ def create_search_index_nhs_combined_data() -> bool:
                             "description": 1.75,
                             "aspect_headers": 1.5,
                             "short_descriptions": 1.25,
-                            "content": 1.0
+                            })),
+                ScoringProfile(
+                    name="title_weighted_100",
+                    text_weights=TextWeights(
+                        weights={
+                            "title": 100.0,
+                            "description": 1.75,
+                            "aspect_headers": 1.5,
+                            "short_descriptions": 1.25,
                             }))
             ]
         )
